@@ -18,15 +18,14 @@ jobs:
       - run : |
           pip install fprettify
 
-          OUT=$(fprettify -i 2 -r . -d)
+          diff=$(fprettify -i 2 -r . -d)
 
-          if [[ $OUT ]]; then
-            YELLOW='\033[1;33m'
-            RED='\033[0;31m'
-            CYAN='\033[0;36m'
-            NC='\033[0m'
-            printf "${YELLOW}$OUT${NC}\n"
-            printf "${RED}The code is not formatted correctly. Please run: ${NC}\n"
-            printf "${CYAN}fprettify -i 2 -r .${NC}\n"
+          if [[ $diff ]]; then
+            red='\033[0;31m'
+            cyan='\033[0;36m'
+            reset='\033[0m'
+            printf "${diff}\n"
+            printf "${red}The code is not formatted correctly. Please run: ${reset}\n"
+            printf "${cyan}fprettify -i 2 -r .${reset}\n"
             exit 1
           fi
