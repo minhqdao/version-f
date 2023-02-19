@@ -24,6 +24,7 @@ jobs:
             red="\033[0;31m"
             cyan="\033[0;36m"
             reset="\033[0m"
+            printf -- "$diff"
             printf "${red}The code is not formatted correctly. Please run: ${reset}\n"
             printf "${cyan}fprettify -i 2 -r .${reset}\n"
             exit 1
