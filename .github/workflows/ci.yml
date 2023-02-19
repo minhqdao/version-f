@@ -17,4 +17,6 @@ jobs:
       - uses: actions/setup-python@v4
       - run : |
           pip install fprettify
-          fprettify -i 2 --r .
+          if [[ $(fprettify -i 2 -r . -d) ]]; then
+            exit 1
+          fi
