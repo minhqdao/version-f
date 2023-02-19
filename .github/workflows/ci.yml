@@ -13,7 +13,7 @@ jobs:
       - name: Set up GCC on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          brew install gcc-9
+          brew install gcc@9
           which gcc
       - uses: fortran-lang/setup-fpm@v5
         with:
