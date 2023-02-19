@@ -17,8 +17,11 @@ jobs:
       - uses: actions/setup-python@v4
       - run : |
           pip install fprettify
+
           if [[ $(fprettify -i 2 -r . -d) ]]; then
-            echo "The code is not formatted correctly."
-            echo "Please run fprettify -i 2 -r ."
+            RED='\033[0;31m'
+            NC='\033[0m'
+            printf "${RED}The code is not formatted correctly."
+            printf "Please run fprettify -i 2 -r .{NC}"
             exit 1
           fi
