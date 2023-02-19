@@ -10,8 +10,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: egor-tensin/setup-gcc@v1
-        if: ${{ contains(matrix.os, 'macos') }}
+      - name: Set up GCC on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          which gcc
+          which gcc-9
+          which gcc-12
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
