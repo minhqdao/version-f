@@ -1,0 +1,16 @@
+name: CI
+on: push
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: fortran-lang/setup-fpm@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: fpm test
