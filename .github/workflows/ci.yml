@@ -21,10 +21,11 @@ jobs:
           diff=$(fprettify -i 2 -r . -d)
 
           if [[ $diff ]]; then
+            yellow="\033[1;33m"
             red="\033[0;31m"
             cyan="\033[0;36m"
             reset="\033[0m"
-            printf -- "$diff"
+            printf -- "${yellow}${diff}${reset}\n"
             printf "${red}The code is not formatted correctly. Please run: ${reset}\n"
             printf "${cyan}fprettify -i 2 -r .${reset}\n"
             exit 1
