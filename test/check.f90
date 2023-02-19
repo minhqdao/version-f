@@ -7,7 +7,7 @@ program check
 
 !################################### Create ###################################!
 
-    v1 = version_t(0, 0, 0)
+  v1 = version_t(0, 0, 0)
   if (v1%to_string() /= '0.0.0') then
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
