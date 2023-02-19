@@ -10,12 +10,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
+
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
-      - run : |
+      - name: Check formatting
+        run: |
           pip install fprettify
 
           diff=$(fprettify -i 2 -r . -d)
@@ -25,7 +27,7 @@ jobs:
             cyan="\033[0;36m"
             reset="\033[0m"
             printf -- "$diff\n"
-            printf "${red}The code is not formatted correctly. Please run: ${reset}\n"
+            printf "${red}The code is not correctly formatted. Please run: ${reset}\n"
             printf "${cyan}fprettify -i 2 -r .${reset}\n"
             exit 1
           fi
