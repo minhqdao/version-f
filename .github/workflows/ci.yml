@@ -20,8 +20,9 @@ jobs:
 
           if [[ $(fprettify -i 2 -r . -d) ]]; then
             RED='\033[0;31m'
+            CYAN='\033[0;36m'
             NC='\033[0m'
-            printf "${RED}The code is not formatted correctly."
-            printf "Please run fprettify -i 2 -r .{NC}"
+            printf "${RED}The code is not formatted correctly. Please run: ${NC}\n"
+            printf "${CYAN}fprettify -i 2 -r .${NC}\n"
             exit 1
           fi
