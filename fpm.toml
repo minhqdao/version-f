@@ -1,0 +1,14 @@
+name = "version-f"
+version = "0.1.0"
+license = "Apache License, Version 2.0"
+author = "Minh Dao"
+maintainer = "hello@minhdao.de"
+copyright = "Copyright 2023, Minh Dao"
+
+[build]
+auto-executables = true
+auto-tests = true
+auto-examples = true
+
+[install]
+library = false
