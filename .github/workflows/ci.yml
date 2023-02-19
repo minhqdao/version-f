@@ -10,3 +10,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: fortran-lang/setup-fpm@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: fpm run --args 'format --check'
