@@ -18,5 +18,7 @@ jobs:
       - run : |
           pip install fprettify
           if [[ $(fprettify -i 2 -r . -d) ]]; then
+            echo "The code is not formatted correctly."
+            echo "Please run fprettify -i 2 -r ."
             exit 1
           fi
