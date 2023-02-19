@@ -156,7 +156,7 @@ contains
   end
 
   !> Returns a string representation of the version including prerelease and
-  !> build metadata.
+  !> build data.
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
     character(len=:), allocatable :: str
@@ -185,7 +185,7 @@ contains
   end
 
   !> Increments the major version number and resets the minor and patch number
-  !> as well as the prerelease and build metadata.
+  !> as well as the prerelease and build data.
   pure subroutine increment_major(this)
     class(version_t), intent(inout) :: this
 
@@ -218,7 +218,7 @@ contains
     if (allocated(this%build)) deallocate (this%build)
   end
 
-  !> Parse a string into a version including prerelease and build metadata.
+  !> Parse a string into a version including prerelease and build data.
   !>
   !> Wrapper function for `try_parse`.
   !>
@@ -234,7 +234,7 @@ contains
   end
 
   !> Attempt to parse a string into a version including prerelease and build
-  !> metadata.
+  !> data.
   subroutine try_parse(this, str, error)
     class(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
@@ -359,7 +359,7 @@ contains
     end if
   end
 
-  !> Check for valid prerelease or build metadata and build identfiers from
+  !> Check for valid prerelease or build data and build identfiers from
   !> the string.
   pure subroutine build_identifiers(ids, str, error)
     type(string_t), allocatable, intent(out) :: ids(:)
@@ -371,13 +371,13 @@ contains
     integer :: i
 
     if (len_trim(str) == 0) then
-      error = error_t('Entered metadata cannot be empty.')
+      error = error_t('Entered data cannot be empty.')
       return
     end if
 
     do i = 1, len(str)
       if (index(valid_chars, str(i:i)) == 0) then
-        error = error_t("Metadata contains invalid character: '"//str//"'.")
+        error = error_t("Data contains invalid character: '"//str//"'.")
         return
       end if
     end do
@@ -387,7 +387,7 @@ contains
 
     ! Last character must not be a dot.
     if (string(len(string):len(string)) == '.') then
-      error = error_t('Metadata must not start or end with a dot.')
+      error = error_t('Data must not start or end with a dot.')
       return
     end if
 
