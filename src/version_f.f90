@@ -7,11 +7,18 @@ module version_f
 
   public :: version_t, error_t
 
+  !> Contains all version information.
   type :: version_t
+    !> The major version number. Incremented when breaking changes are made.
     integer :: major
+    !> The minor version number. It is incremented when new functionality is
+    !> added in a backwards-compatible manner.
     integer :: minor
+    !> The patch version number. Incremented for backwards-compatible bug fixes.
     integer :: patch
+    !> Pre-release version identifiers that are used for comparisons.
     type(string_t), allocatable :: prerelease(:)
+    !> Build metadata that does not contribute to sorting.
     type(string_t), allocatable :: build(:)
 
   contains
