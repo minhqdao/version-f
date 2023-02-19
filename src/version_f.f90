@@ -272,7 +272,7 @@ contains
     end if
   end
 
-  !> Build the main part of the version (major, minor, patch).
+  !> Build the `major.minor.patch` part of the version.
   subroutine build_mmp(this, str, error)
     type(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
@@ -290,11 +290,6 @@ contains
     if (l == 0) then
       error = error_t('Version must not be empty.')
       return
-    end if
-
-    if (i == 0) then
-      call s2int(str, this%major, error)
-      if (allocated(error)) return
     end if
 
     if (i == 0) then
@@ -409,6 +404,7 @@ contains
     end do
   end
 
+  !> Validate an identifier.
   pure subroutine validate_identifier(str, error)
     character(len=*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
