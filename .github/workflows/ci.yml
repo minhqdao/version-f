@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: fortran-lang/setup-fpm@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: fpm run --args 'format --check'
+      - uses: actions/setup-python@v4
+      - run : |
+          pip install fprettify
+          fprettify -i 2 --r .
