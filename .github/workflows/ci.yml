@@ -1,0 +1,33 @@
+name: CI
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: fortran-lang/setup-fpm@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: fpm test
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - name: Check formatting
+        run: |
+          pip install fprettify
+
+          diff=$(fprettify -i 2 -r . -d)
+
+          if [[ $diff ]]; then
+            red="\033[0;31m"
+            cyan="\033[0;36m"
+            reset="\033[0m"
+            printf -- "$diff\n"
+            printf "${red}The code is not correctly formatted. Please run: ${reset}\n"
+            printf "${cyan}fprettify -i 2 -r .${reset}\n"
+            exit 1
+          fi
