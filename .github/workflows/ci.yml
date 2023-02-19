@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: egor-tensin/setup-gcc@v1
+        if: ${{ contains(matrix.os, 'macos') }}
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
