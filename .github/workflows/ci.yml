@@ -18,10 +18,10 @@ jobs:
       - run : |
           pip install fprettify
 
-          OUT = $(fprettify -i 2 -r . -d)
+          OUT = `fprettify -i 2 -r . -d`
 
           if [[ $OUT ]]; then
-            echo "$OUT"
+            echo $OUT
             RED='\033[0;31m'
             CYAN='\033[0;36m'
             NC='\033[0m'
