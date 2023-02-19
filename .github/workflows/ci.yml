@@ -21,10 +21,11 @@ jobs:
           OUT=$(fprettify -i 2 -r . -d)
 
           if [[ $OUT ]]; then
-            echo $OUT
+            YELLOW='\033[1;33m'
             RED='\033[0;31m'
             CYAN='\033[0;36m'
             NC='\033[0m'
+            printf "${YELLOW}${OUT}${NC}\n"
             printf "${RED}The code is not formatted correctly. Please run: ${NC}\n"
             printf "${CYAN}fprettify -i 2 -r .${NC}\n"
             exit 1
