@@ -181,7 +181,7 @@ fpm test
 
 The CI will fail if the code is not formatted correctly. Please configure your
 editor to use [fprettify](https://pypi.org/project/fprettify/) and use an
-indentation width of 2 or run `fprettify -i 2 -r .` before committing.
+indentation width of 2 or run `fprettify -i 2 -r .` before committing. Thank you. 🙏🏽
 
 ## Contribute
 
