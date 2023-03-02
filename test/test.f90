@@ -164,6 +164,12 @@ program test
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
 
+  v1 = version_t(1, 2, 3, '123.789')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-123.790') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
   v1 = version_t(1, 2, 3, 'abc')
   call v1%increment_prerelease()
   if (v1%to_string() /= '1.2.3-abc.1') then

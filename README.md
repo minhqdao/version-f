@@ -130,6 +130,7 @@ print *, v1 == v2 ! false
 
 call v1%increment_patch() ! 0.5.4
 call v1%increment_prerelease() ! 0.5.4-1
+call v1%increment_prerelease() ! 0.5.4-2
 ```
 
 ## build metadata
