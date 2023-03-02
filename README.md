@@ -20,7 +20,7 @@ simply add this package as a dependency to your `fpm.toml` file:
 
 [dependencies.version-f]
 git = "https://github.com/minhqdao/version-f.git"
-tag = "v0.1.0"
+tag = "v0.2.0"
 ```
 
 Then import the `version_f` module into your Fortran code:
