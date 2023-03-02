@@ -5,7 +5,7 @@ module version_f
   implicit none
   private
 
-  public :: version_t, error_t
+  public :: version_t, string_t, error_t
 
   !> Contains all version information.
   type :: version_t
@@ -23,7 +23,8 @@ module version_f
 
   contains
 
-    procedure :: to_string, increment_major, increment_minor, increment_patch, increment_prerelease
+    procedure :: to_string, increment_major, increment_minor, increment_patch, &
+    & increment_prerelease
 
     generic :: create => try_create
     procedure, private :: try_create
