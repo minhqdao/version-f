@@ -134,6 +134,48 @@ program test
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
 
+  v1 = version_t(1, 2, 3)
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, build='123')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '80')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-81') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '80', '123')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-81') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, 'abc.789')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-abc.790') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, 'abc')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-abc.1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, 'a23c')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.2.3-a23c.1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
 !################################### Parse ####################################!
 
   call v1%parse('0', e)
