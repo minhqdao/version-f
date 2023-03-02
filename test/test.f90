@@ -182,6 +182,54 @@ program test
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
 
+  v1 = version_t(1, 2, 3, build='1')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3+2') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3)
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3+1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, 'abc')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-abc+1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, 'abc', '123')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-abc+124') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '123', '123')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-123+124') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '123', 'abc')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-123+abc.1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '123', '78H')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-123+78H.1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 2, 3, '123', '78-')
+  call v1%increment_build()
+  if (v1%to_string() /= '1.2.3-123+78-.1') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
 !################################### Parse ####################################!
 
   call v1%parse('0', e)
