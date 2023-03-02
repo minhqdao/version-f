@@ -236,13 +236,10 @@ contains
   pure subroutine increment_prerelease(this)
     class(version_t), intent(inout) :: this
 
-    character(len=:), allocatable :: str
-
     if (allocated(this%prerelease)) then
       if (this%prerelease(size(this%prerelease))%is_numeric()) then
-        str = trim(int2s(this%prerelease(size(this%prerelease))%num() + 1))
         this%prerelease = [this%prerelease(1:size(this%prerelease) - 1), &
-        & string_t(str)]
+        & string_t(trim(int2s(this%prerelease(size(this%prerelease))%num() + 1)))]
       else
         this%prerelease = [this%prerelease, string_t('1')]
       end if
