@@ -24,7 +24,7 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease
+    & increment_prerelease, increment_build
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -231,24 +231,38 @@ contains
     if (allocated(this%build)) deallocate (this%build)
   end
 
-  !> If the last prerelease identifier is numeric, increment it by 1. Otherwise
-  !> add a new prerelease identifier with the value 1. Clear build metadata.
+  !> Increment prerelease and reset build data.
   pure subroutine increment_prerelease(this)
     class(version_t), intent(inout) :: this
 
-    if (allocated(this%prerelease)) then
-      if (this%prerelease(size(this%prerelease))%is_numeric()) then
-        this%prerelease = [this%prerelease(1:size(this%prerelease) - 1), &
-        & string_t(trim(int2s(this%prerelease(size(this%prerelease))%num() + 1)))]
+    call increment_identifier(this%prerelease)
+    if (allocated(this%build)) deallocate (this%build)
+  end
+
+  !> Increment build metadata.
+  pure subroutine increment_build(this)
+    class(version_t), intent(inout) :: this
+
+    call increment_identifier(this%build)
+  end
+
+  !> Increment prerelease or build identifiers. If the last identifier is
+  !> numeric, increment it by 1. Otherwise add a new identifier with the value
+  !> 1.
+  pure subroutine increment_identifier(ids)
+    type(string_t), allocatable, intent(inout) :: ids(:)
+
+    if (allocated(ids)) then
+      if (ids(size(ids))%is_numeric()) then
+        ids = [ids(1:size(ids) - 1), &
+        & string_t(trim(int2s(ids(size(ids))%num() + 1)))]
       else
-        this%prerelease = [this%prerelease, string_t('1')]
+        ids = [ids, string_t('1')]
       end if
     else
-      allocate (this%prerelease(1))
-      this%prerelease(1)%str = '1'
+      allocate (ids(1))
+      ids(1)%str = '1'
     end if
-
-    if (allocated(this%build)) deallocate (this%build)
   end
 
   !> Parse a string into a version including prerelease and build data.
