@@ -87,13 +87,14 @@ if (v2 == v4) then ! true
 
 ## Increment versions
 
-`Prerelease` and `build` data are cleared each time the version is incremented.
+`Prerelease` and `build` data are cleared each time a major, minor or patch number is incremented. A `prerelease` is incremented by adding `1` to the last identifier if the latter is numeric. If the last identifier isn't a number or no `prerelease` labels exists, a new identifier is added with the value of `1`. Existing `build` information is cleared each time a `prerelease` is incremented.
 
 ```fortran
 type(version_t) :: version
 
 version = version_t(0, 5, 3, 'beta.1', '1')
 
+call version%increment_prerelease() ! 0.5.3-beta.2
 call version%increment_patch() ! 0.5.4
 call version%increment_minor() ! 0.6.0
 call version%increment_major() ! 1.0.0
@@ -113,7 +114,7 @@ print *, version%to_string() ! '0.5.3-beta.1+1-100'
 
 ## prerelase labels
 
-`prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented.
+`prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented. A `prerelease` can be [incremented](#increment-versions).
 
 ```fortran
 type(version_t) :: v1, v2
@@ -128,6 +129,8 @@ print *, v1 < v2 ! true
 print *, v1 == v2 ! false
 
 call v1%increment_patch() ! 0.5.4
+call v1%increment_prerelease() ! 0.5.4-1
+call v1%increment_prerelease() ! 0.5.4-2
 ```
 
 ## build metadata
