@@ -23,7 +23,7 @@ module version_f
 
   contains
 
-    procedure :: to_string, increment_major, increment_minor, increment_patch
+    procedure :: to_string, increment_major, increment_minor, increment_patch, increment_prerelease
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -56,6 +56,11 @@ module version_f
 
   type :: string_t
     character(len=:), allocatable :: str
+  contains
+    generic :: num => string_t_2i
+    procedure, private :: string_t_2i
+    generic :: is_numeric => string_t_is_numeric
+    procedure, private :: string_t_is_numeric
   end type
 
   type :: error_t
@@ -225,6 +230,26 @@ contains
     if (allocated(this%build)) deallocate (this%build)
   end
 
+  !> If the last prerelease identifier is numeric, increment it by 1. Otherwise
+  !> add a new prerelease identifier with the value 1. Clear build metadata.
+  pure subroutine increment_prerelease(this)
+    class(version_t), intent(inout) :: this
+
+    if (allocated(this%prerelease)) then
+      if (this%prerelease(size(this%prerelease))%is_numeric()) then
+        this%prerelease(size(this%prerelease))%str = &
+        & trim(int2s(this%prerelease(size(this%prerelease))%num() + 1))
+      else
+        this%prerelease = [this%prerelease, string_t('1')]
+      end if
+    else
+      allocate (this%prerelease(1))
+      this%prerelease(1)%str = '1'
+    end if
+
+    if (allocated(this%build)) deallocate (this%build)
+  end
+
   !> Parse a string into a version including prerelease and build data.
   !>
   !> Wrapper function for `try_parse`.
@@ -348,6 +373,16 @@ contains
     if (allocated(e)) error stop e%msg
   end
 
+  !> Convert a `string_t` to an integer.
+  pure integer function string_t_2i(this)
+    class(string_t), intent(in) :: this
+
+    type(error_t), allocatable :: e
+
+    call s2int(this%str, string_t_2i, e)
+    if (allocated(e)) error stop e%msg
+  end
+
   !> Convert an integer to a string.
   pure function int2s(num) result(str)
     integer, intent(in) :: num
@@ -433,6 +468,14 @@ contains
     logical :: is_numeric
 
     is_numeric = verify(str, '0123456789') == 0
+  end
+
+  !> Check if string_t is purely numeric.
+  pure function string_t_is_numeric(this)
+    class(string_t), intent(in) :: this
+    logical :: string_t_is_numeric
+
+    string_t_is_numeric = verify(this%str, '0123456789') == 0
   end
 
   !> Check two versions for equality.
