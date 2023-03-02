@@ -241,7 +241,6 @@ contains
     if (allocated(this%prerelease)) then
       if (this%prerelease(size(this%prerelease))%is_numeric()) then
         str = trim(int2s(this%prerelease(size(this%prerelease))%num() + 1))
-        this%prerelease(size(this%prerelease))%str = str
         this%prerelease = [this%prerelease(1:size(this%prerelease) - 1), &
         & string_t(str)]
       else
