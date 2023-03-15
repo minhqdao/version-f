@@ -609,7 +609,8 @@ contains
     is_greater = size(lhs) > size(rhs)
   end
 
-  !> True if the string can be parsed as a valid `version_t`.
+  !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
+  !> wish to receive detailed error messages.
   logical function is_version(str)
     character(len=*), intent(in) :: str
 
