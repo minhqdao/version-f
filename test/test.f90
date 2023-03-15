@@ -1,5 +1,5 @@
 program test
-  use version_f, only: version_t, error_t
+  use version_f, only: version_t, is_version, error_t
   implicit none
 
   type(version_t) :: v1, v2
@@ -722,6 +722,31 @@ program test
   if (.not. v1 > v2) call fail('Greater than failed.')
   if (v1 <= v2) call fail('Less than or equal failed.')
   if (.not. v1 >= v2) call fail('Greater than or equal failed.')
+
+  !############################### is_version #################################!
+
+  if (is_version('')) call fail("'' isn't a version.")
+  if (is_version(' ')) call fail("' ' isn't a version.")
+  if (is_version('a')) call fail("'a' isn't version.")
+  if (is_version('1a')) call fail("'1a' isn't a version.")
+  if (is_version('1.0.0a')) call fail("'1.0.0a' isn't a version.")
+  if (is_version('1.0.0.a')) call fail("'1.0.0.a' isn't a version.")
+  if (is_version('1.0.0.a-a')) call fail("'1.0.0.a-a' isn't a version.")
+  if (is_version('1.0.0-(')) call fail("'1.0.0-(' isn't a version.")
+  if (is_version('1.0.0-')) call fail("'1.0.0-' isn't a version.")
+  if (is_version('1.0.0-+')) call fail("'1.0.0-+' isn't a version.")
+  if (is_version('1.0.0-0')) call fail("'1.0.0-' isn't a version.")
+  if (is_version('1.0.0-ab..cd')) call fail("'1.0.0-ab..cd' isn't a version.")
+  if (is_version('...')) call fail("'...' isn't a version.")
+  if (is_version('-')) call fail("'-' isn't a version.")
+  if (is_version('+')) call fail("'+' isn't a version.")
+  if (.not. is_version('0.0.0')) call fail("'0.0.0' is a version.")
+  if (.not. is_version('0.0.99999')) call fail("'0.0.99999' a version.")
+  if (.not. is_version('7')) call fail("'7' is a version.")
+  if (.not. is_version('7.49')) call fail("'7.49' is a version.")
+  if (.not. is_version('7.49-a')) call fail("'7.49-a' is a version.")
+  if (.not. is_version('7.49-a')) call fail("'7.49-a' is a version.")
+  if (.not. is_version('7.49-a+12.a')) call fail("'7.49-a+12.a' is a version.")
 
 contains
 
