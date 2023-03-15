@@ -5,7 +5,7 @@ module version_f
   implicit none
   private
 
-  public :: version_t, string_t, error_t
+  public :: version_t, string_t, error_t, is_version
 
   !> Contains all version information.
   type :: version_t
@@ -607,6 +607,18 @@ contains
     end do
 
     is_greater = size(lhs) > size(rhs)
+  end
+
+  !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
+  !> wish to receive detailed error messages.
+  logical function is_version(str)
+    character(len=*), intent(in) :: str
+
+    type(version_t) :: version
+    type(error_t), allocatable :: error
+
+    call version%parse(str, error)
+    is_version = .not. allocated(error)
   end
 
 end module version_f

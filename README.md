@@ -157,6 +157,16 @@ print *, v1%to_string() ! '0.5.3-alpha.1+1'
 print *, v1%increment_build() ! '0.5.3-alpha.1+2'
 ```
 
+## is_version()
+
+The `is_version()` function can be used to conveniently check if the string is
+a valid version. Use `parse` to receive detailed error messages.
+
+```fortran
+print *, is_version('0.1.0-alpha.1') ! true
+print *, is_version('abc') ! false
+```
+
 ## More examples
 
 ```fortran
