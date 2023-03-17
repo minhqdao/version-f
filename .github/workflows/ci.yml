@@ -17,11 +17,9 @@ jobs:
 
       - name: Set up macOS
         if: matrix.os == 'macos-latest'
-        env:
-          GCC_VERSION: 9
-        run: |
-          brew install gcc@$GCC_VERSION
-          ln -s /usr/local/bin/gfortran-$GCC_VERSION /usr/local/bin/gfortran
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: 9
 
       - name: Test fpm
         run: |
