@@ -12,6 +12,9 @@ jobs:
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gcc
+        if: matrix.os == 'macos-latest'
+        run: brew install gcc
       - name: Test fpm
         run: |
           gfortran --version
