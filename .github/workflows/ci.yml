@@ -14,9 +14,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install GCC (macOS)
         if: matrix.os == 'macos-latest'
+        env:
+          GCC_VERSION: 9
         run: |
-          brew install gcc@9
-          ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
+          brew install gcc@$GCC_VERSION
+          ln -s /usr/local/bin/gfortran-$GCC_VERSION /usr/local/bin/gfortran
       - name: Test fpm
         run: |
           gfortran --version
