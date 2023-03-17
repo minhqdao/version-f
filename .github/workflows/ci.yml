@@ -9,7 +9,8 @@ jobs:
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: |
+      - name: Test fpm
+        run: |
           gfortran --version
           fpm test
 
