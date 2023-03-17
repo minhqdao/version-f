@@ -15,8 +15,9 @@ jobs:
       - name: Link gfortran (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          which gcc
-          ln -s /usr/local/bin/gfortran-$(gcc -dumpversion) /usr/local/bin/gfortran
+          gcc -dumpversion
+          echo "/usr/local/bin/gfortran-$(gcc -dumpversion)"
+          ln -s /usr/local/bin/gfortran-12 /usr/local/bin/gfortran
       - name: Test fpm
         run: |
           gfortran --version
