@@ -207,4 +207,4 @@ when you open a pull request.
 
 ## License
 
-This is free software. You can use, redistribute and/or modify it under the terms of the [Apache License, Version 2.0]().
+You can use, redistribute and/or modify it under the terms of the [Apache License, Version 2.0](https://github.com/minhqdao/version-f/blob/main/LICENSE).
