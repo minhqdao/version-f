@@ -23,6 +23,16 @@ jobs:
           brew install gcc@$GCC_VERSION
           ln -s /usr/local/bin/gfortran-$GCC_VERSION /usr/local/bin/gfortran
 
+      - name: Set up Windows
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ucrt64
+          update: false
+          path-type: inherit
+          pacboy: >-
+            gcc-fortran:p
+
       - name: Test fpm
         run: |
           gfortran --version
