@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-python@v4
       - name: Check formatting
         run: |
+          which gfortran
           pip install fprettify
 
           diff=$(fprettify -i 2 -r . -d)
