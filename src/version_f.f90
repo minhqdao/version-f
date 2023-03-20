@@ -132,15 +132,13 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     if (major < 0) then
-      error = error_t('Version numbers must not be negative.')
-      return
+      error = error_t('Version numbers must not be negative.'); return
     end if
     this%major = major
 
     if (present(minor)) then
       if (minor < 0) then
-        error = error_t('Version numbers must not be negative.')
-        return
+        error = error_t('Version numbers must not be negative.'); return
       end if
       this%minor = minor
     else
@@ -149,8 +147,7 @@ contains
 
     if (present(patch)) then
       if (patch < 0) then
-        error = error_t('Version numbers must not be negative.')
-        return
+        error = error_t('Version numbers must not be negative.'); return
       end if
       this%patch = patch
     else
@@ -335,8 +332,7 @@ contains
     l = len_trim(str)
 
     if (l == 0) then
-      error = error_t('Version must not be empty.')
-      return
+      error = error_t('Version must not be empty.'); return
     end if
 
     if (i == 0) then
@@ -423,14 +419,12 @@ contains
     integer :: i
 
     if (len_trim(str) == 0) then
-      error = error_t('Entered data cannot be empty.')
-      return
+      error = error_t('Entered data cannot be empty.'); return
     end if
 
     do i = 1, len(str)
       if (index(valid_chars, str(i:i)) == 0) then
-        error = error_t("Data contains invalid character: '"//str//"'.")
-        return
+        error = error_t("Data contains invalid character: '"//str//"'."); return
       end if
     end do
 
@@ -439,8 +433,7 @@ contains
 
     ! Last character must not be a dot.
     if (string(len(string):len(string)) == '.') then
-      error = error_t('Data must not start or end with a dot.')
-      return
+      error = error_t('Data must not start or end with a dot.'); return
     end if
 
     do
@@ -508,13 +501,11 @@ contains
 
     if (allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
       if (size(lhs%prerelease) /= size(rhs%prerelease)) then
-        equals = .false.
-        return
+        equals = .false.; return
       end if
       do i = 1, size(lhs%prerelease)
         if (lhs%prerelease(i)%str /= rhs%prerelease(i)%str) then
-          equals = .false.
-          return
+          equals = .false.; return
         end if
       end do
     else if (allocated(lhs%prerelease) .or. allocated(rhs%prerelease)) then
