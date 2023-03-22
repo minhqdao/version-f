@@ -167,6 +167,23 @@ print *, is_version('0.1.0-alpha.1') ! true
 print *, is_version('abc') ! false
 ```
 
+## is_exactly()
+
+The `is_exactly()` function has been added for convencience and isn't part of
+the original Semantic Versioning 2.0.0 specification. It is `.true.` if both
+versions are equal including the `build` metadata.
+
+```fortran
+v1 = version_t(0, 1, 0, 'a', '1')
+v2 = version_t(0, 1, 0, 'a', '1')
+print *, v1%is_exactly(v2) ! true
+
+v1 = version_t(0, 1, 0, 'a', '1')
+v2 = version_t(0, 1, 0, 'a', '2')
+print *, v1%is_exactly(v2) ! false
+print *, v1 == v2 ! true
+```
+
 ## More examples
 
 ```fortran
