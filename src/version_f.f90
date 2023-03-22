@@ -24,7 +24,7 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build
+    & increment_prerelease, increment_build, is_exactly
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -598,6 +598,33 @@ contains
     end do
 
     is_greater = size(lhs) > size(rhs)
+  end
+
+  !> True if both versions are exactly the same including the build metadata.
+  !> This procedure has been added for conveniece. It is not part of the
+  !> Semantic Versioning 2.0.0 specification.
+  pure logical function is_exactly(self, other)
+    class(version_t), intent(in) :: self
+    type(version_t), intent(in) :: other
+
+    integer :: i
+
+    is_exactly = self == other; 
+    if (.not. is_exactly) return
+
+    if (allocated(self%build) .and. allocated(other%build)) then
+      if (size(self%build) /= size(other%build)) then
+        is_exactly = .false.; return
+      end if
+
+      do i = 1, size(self%build)
+        if (self%build(i)%str /= other%build(i)%str) then
+          is_exactly = .false.; return
+        end if
+      end do
+    else if (allocated(self%build) .or. allocated(other%build)) then
+      is_exactly = .false.; return
+    end if
   end
 
   !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
