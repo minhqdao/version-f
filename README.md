@@ -60,7 +60,7 @@ call version%parse('0.1.0-alpha+1', error)
 
 ## Compare versions
 
-Versions can be compared using the standard Fortran operators. Be aware that a version containing `prerelease` labels has lower precedence than the equivalent version without. `build` information is not used for comparison.
+Versions can be compared using the standard Fortran operators. Be aware that a version containing `prerelease` labels has lower precedence than the equivalent version without. `build` information isn't used for comparison. However, you can use the [is_exactly()](#is_exactly) function to include it.
 
 ```fortran
 type(version_t) :: v1, v2, v3, v4
@@ -169,9 +169,7 @@ print *, is_version('abc') ! false
 
 ## is_exactly()
 
-The `is_exactly()` function has been added for convencience and isn't part of
-the original Semantic Versioning 2.0.0 specification. It is `.true.` if both
-versions are equal including the `build` metadata.
+The `is_exactly()` function has been added for convencience and isn't part of the original Semantic Versioning 2.0.0 specification. It is `true` if both versions are equal including the `build` metadata.
 
 ```fortran
 v1 = version_t(0, 1, 0, 'a', '1')
