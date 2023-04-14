@@ -85,11 +85,8 @@ contains
     type(version_t) :: this
 
     type(error_t), allocatable :: error
-    logical :: is_strict_mode = .false.
 
-    if (present(strict_mode)) is_strict_mode = strict_mode
-
-    call try_create(this, major, minor, patch, prerelease, build, error, is_strict_mode)
+    call try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
     if (allocated(error)) error stop error%msg
   end
 
@@ -295,11 +292,7 @@ contains
 
     type(error_t), allocatable :: error
 
-    logical :: is_strict_mode = .false.
-
-    if (present(strict_mode)) is_strict_mode = strict_mode
-
-    call version%parse(str, error, is_strict_mode)
+    call version%parse(str, error, strict_mode)
     if (allocated(error)) error stop error%msg
   end
 
@@ -312,25 +305,22 @@ contains
     logical, optional, intent(in) :: strict_mode
 
     integer :: i, j
-    logical :: is_strict_mode = .false.
-
-    if (present(strict_mode)) is_strict_mode = strict_mode
 
     i = index(str, '-')
     j = index(str, '+')
 
     if (i == 0 .and. j == 0) then
-      call build_mmp(this, str, error, is_strict_mode); return
+      call build_mmp(this, str, error, strict_mode); return
     else if (i /= 0 .and. j == 0) then
-      call build_mmp(this, str(1:i - 1), error, is_strict_mode)
+      call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
       call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), error); return
     else if ((i == 0 .and. j /= 0) .or. ((i /= 0 .and. j /= 0) .and. (i > j))) then
-      call build_mmp(this, str(1:j - 1), error, is_strict_mode)
+      call build_mmp(this, str(1:j - 1), error, strict_mode)
       if (allocated(error)) return
       call build_identifiers(this%build, str(j + 1:len_trim(str)), error); return
     else if (i /= 0 .and. j /= 0) then
-      call build_mmp(this, str(1:i - 1), error, is_strict_mode)
+      call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
       call build_identifiers(this%prerelease, str(i + 1:j - 1), error)
       if (allocated(error)) return
@@ -669,11 +659,8 @@ contains
 
     type(version_t) :: version
     type(error_t), allocatable :: error
-    logical :: is_strict_mode = .false.
 
-    if (present(strict_mode)) is_strict_mode = strict_mode
-
-    call version%parse(str, error, is_strict_mode)
+    call version%parse(str, error, strict_mode)
     is_version = .not. allocated(error)
   end
 
