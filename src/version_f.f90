@@ -73,17 +73,23 @@ contains
   !> Wrapper function for `try_create`.
   !>
   !> Can be invoked by calling the default constructor.
-  function create(major, minor, patch, prerelease, build) result(this)
+  !>
+  !> In strict mode, all major, minor and patch versions must be provided.
+  function create(major, minor, patch, prerelease, build, strict_mode) result(this)
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
     integer, optional, intent(in) :: patch
     character(len=*), optional, intent(in) :: prerelease
     character(len=*), optional, intent(in) :: build
+    logical, optional, intent(in) :: strict_mode
     type(version_t) :: this
 
     type(error_t), allocatable :: error
+    logical :: is_strict_mode = .false.
 
-    call try_create(this, major, minor, patch, prerelease, build, error)
+    if (present(strict_mode)) is_strict_mode = strict_mode
+
+    call try_create(this, major, minor, patch, prerelease, build, error, is_strict_mode)
     if (allocated(error)) error stop error%msg
   end
 
@@ -121,8 +127,10 @@ contains
   !>
   !> The default way is to create a version using the constructor.
   !>
-  !> Use this procedure if you want to handle the errors yourself.
-  subroutine try_create(this, major, minor, patch, prerelease, build, error)
+  !> Use this procedure if you want to handle errors yourself.
+  !>
+  !> In strict mode, all major, minor and patch versions must be provided.
+  subroutine try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
     class(version_t), intent(out) :: this
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
@@ -130,6 +138,11 @@ contains
     character(len=*), optional, intent(in) :: prerelease
     character(len=*), optional, intent(in) :: build
     type(error_t), allocatable, intent(out) :: error
+    logical, optional, intent(in) :: strict_mode
+
+    logical :: is_strict_mode = .false.
+
+    if (present(strict_mode)) is_strict_mode = strict_mode
 
     if (major < 0) then
       error = error_t('Version numbers must not be negative.'); return
@@ -142,6 +155,9 @@ contains
       end if
       this%minor = minor
     else
+      if (is_strict_mode) then
+        error = error_t('Strict mode: Minor version must be provided.'); return
+      end if
       this%minor = 0
     end if
 
@@ -151,6 +167,9 @@ contains
       end if
       this%patch = patch
     else
+      if (is_strict_mode) then
+        error = error_t('Strict mode: Patch version must be provided.'); return
+      end if
       this%patch = 0
     end if
 
@@ -267,62 +286,70 @@ contains
   !> Wrapper function for `try_parse`.
   !>
   !> Can be invoked by calling the default constructor.
-  function parse(str) result(version)
+  !>
+  !> In strict mode, all major, minor and patch versions must be provided.
+  function parse(str, strict_mode) result(version)
     character(len=*), intent(in) :: str
+    logical, optional, intent(in) :: strict_mode
     type(version_t) :: version
 
     type(error_t), allocatable :: error
 
-    call version%parse(str, error)
+    logical :: is_strict_mode = .false.
+
+    if (present(strict_mode)) is_strict_mode = strict_mode
+
+    call version%parse(str, error, is_strict_mode)
     if (allocated(error)) error stop error%msg
   end
 
   !> Attempt to parse a string into a version including prerelease and build
-  !> data.
-  subroutine try_parse(this, str, error)
+  !> data. In strict mode, all major, minor and patch versions must be provided.
+  subroutine try_parse(this, str, error, strict_mode)
     class(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
+    logical, optional, intent(in) :: strict_mode
 
     integer :: i, j
+    logical :: is_strict_mode = .false.
+
+    if (present(strict_mode)) is_strict_mode = strict_mode
 
     i = index(str, '-')
     j = index(str, '+')
 
     if (i == 0 .and. j == 0) then
-      call build_mmp(this, str, error)
-      if (allocated(error)) return
-      return
+      call build_mmp(this, str, error, is_strict_mode); return
     else if (i /= 0 .and. j == 0) then
-      call build_mmp(this, str(1:i - 1), error)
+      call build_mmp(this, str(1:i - 1), error, is_strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), error)
-      if (allocated(error)) return
-      return
+      call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), error); return
     else if ((i == 0 .and. j /= 0) .or. ((i /= 0 .and. j /= 0) .and. (i > j))) then
-      call build_mmp(this, str(1:j - 1), error)
+      call build_mmp(this, str(1:j - 1), error, is_strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), error)
-      if (allocated(error)) return
-      return
+      call build_identifiers(this%build, str(j + 1:len_trim(str)), error); return
     else if (i /= 0 .and. j /= 0) then
-      call build_mmp(this, str(1:i - 1), error)
+      call build_mmp(this, str(1:i - 1), error, is_strict_mode)
       if (allocated(error)) return
       call build_identifiers(this%prerelease, str(i + 1:j - 1), error)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), error)
-      if (allocated(error)) return
-      return
+      call build_identifiers(this%build, str(j + 1:len_trim(str)), error); return
     end if
   end
 
-  !> Build the `major.minor.patch` part of the version.
-  subroutine build_mmp(this, str, error)
+  !> Build the `major.minor.patch` part of the version. In strict mode, all
+  !> major, minor and patch versions must be provided.
+  subroutine build_mmp(this, str, error, strict_mode)
     type(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
+    logical, optional, intent(in) :: strict_mode
 
     integer :: i, j, l
+    logical :: is_strict_mode = .false.
+
+    if (present(strict_mode)) is_strict_mode = strict_mode
 
     this%major = 0
     this%minor = 0
@@ -336,6 +363,9 @@ contains
     end if
 
     if (i == 0) then
+      if (is_strict_mode) then
+        error = error_t('Strict mode: No minor and patch versions provided.'); return
+      end if
       call s2int(str, this%major, error)
       if (allocated(error)) return
     else
@@ -343,6 +373,9 @@ contains
       if (allocated(error)) return
       j = index(str(i + 1:l), '.')
       if (j == 0) then
+        if (is_strict_mode) then
+          error = error_t('Strict mode: No patch version provided.'); return
+        end if
         call s2int(str(i + 1:l), this%minor, error)
         if (allocated(error)) return
       else
@@ -628,14 +661,19 @@ contains
   end
 
   !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
-  !> wish to receive detailed error messages.
-  logical function is_version(str)
+  !> wish to receive detailed error messages. In strict mode, all major, minor
+  !> and patch versions must be provided.
+  logical function is_version(str, strict_mode)
     character(len=*), intent(in) :: str
+    logical, optional, intent(in) :: strict_mode
 
     type(version_t) :: version
     type(error_t), allocatable :: error
+    logical :: is_strict_mode = .false.
 
-    call version%parse(str, error)
+    if (present(strict_mode)) is_strict_mode = strict_mode
+
+    call version%parse(str, error, is_strict_mode)
     is_version = .not. allocated(error)
   end
 
