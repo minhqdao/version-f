@@ -900,12 +900,13 @@ program test
   call v1%parse('1.2', e, strict_mode=.false.)
   if (allocated(e)) call fail('No strict mode: Has implicit major, minor and patch.')
 
-  if (is_version('1', strict_mode=.true.)) call fail("Strict Mode: Missing minor and patch.")
-  if (is_version('1+123', strict_mode=.true.)) call fail("Strict Mode: Missing minor and patch.")
-  if (is_version('1.0+123', strict_mode=.true.)) call fail("Strict Mode: Missing patch.")
-  if (is_version('1.0', strict_mode=.true.)) call fail("Strict Mode: Missing patch.")
-  if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail("Strict Mode: Is valid version.")
-  if (.not. is_version('0.0.0')) call fail("'0.0.0' is a version.")
+  if (is_version('1', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
+  if (is_version('1+123', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
+  if (is_version('1.0+123', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
+  if (is_version('1.0', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
+  if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail("Strict mode: Is valid version.")
+  if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
+  if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
 
 contains
 
