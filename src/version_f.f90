@@ -359,6 +359,9 @@ contains
       call s2int(str, this%major, error)
       if (allocated(error)) return
     else
+      if (is_strict_mode .and. i == 1) then
+        error = error_t('Strict mode: Major version has to be number.'); return
+      end if
       call s2int(str(1:i - 1), this%major, error)
       if (allocated(error)) return
       j = index(str(i + 1:l), '.')
@@ -369,8 +372,14 @@ contains
         call s2int(str(i + 1:l), this%minor, error)
         if (allocated(error)) return
       else
+        if (is_strict_mode .and. j == 1) then
+          error = error_t('Strict mode: Minor version has to be number.'); return
+        end if
         call s2int(str(i + 1:i + j - 1), this%minor, error)
         if (allocated(error)) return
+        if (is_strict_mode .and. len(str) == i + j) then
+          error = error_t('Strict mode: Patch version has to be number.'); return
+        end if
         call s2int(str(i + j + 1:l), this%patch, error)
         if (allocated(error)) return
       end if

@@ -885,14 +885,17 @@ program test
   call v1%parse('0.1', e, strict_mode=.true.)
   if (.not. allocated(e)) call fail('Strict mode: No patch.')
 
-  call v1%parse('..988', e, strict_mode=.true.)
-  if (allocated(e)) call fail('Strict mode: Has implicit major and minor.')
+  call v1%parse('.2.988', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit major.')
 
   call v1%parse('1..988', e, strict_mode=.true.)
-  if (allocated(e)) call fail('Strict mode: Has implicit minor.')
+  if (.not. allocated(e)) call fail('Strict mode: No implicit minor.')
 
-  call v1%parse('.1.', e, strict_mode=.true.)
-  if (allocated(e)) call fail('Strict mode: Has implicit major and patch.')
+  call v1%parse('100.1.', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit patch.')
+
+  call v1%parse('..', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit major, minor and patch.')
 
   call v1%parse('.', e, strict_mode=.false.)
   if (allocated(e)) call fail('No strict mode: Has implicit major, minor and patch.')
