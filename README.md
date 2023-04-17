@@ -184,7 +184,7 @@ print *, v1 == v2 ! true
 
 ## strict_mode
 
-In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are also forbidden.
+In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are forbidden.
 
 ```fortran
 type(version_t) :: version

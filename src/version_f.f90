@@ -284,7 +284,8 @@ contains
   !>
   !> Can be invoked by calling the default constructor.
   !>
-  !> In strict mode, all major, minor and patch versions must be provided.
+  !> In strict mode, all major, minor and patch versions must be provided. Implicit
+  !> zeros are forbidden in strict mode.
   function parse(str, strict_mode) result(version)
     character(len=*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
@@ -298,6 +299,7 @@ contains
 
   !> Attempt to parse a string into a version including prerelease and build
   !> data. In strict mode, all major, minor and patch versions must be provided.
+  !> Implicit zeros are forbidden in strict mode.
   subroutine try_parse(this, str, error, strict_mode)
     class(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
@@ -329,7 +331,8 @@ contains
   end
 
   !> Build the `major.minor.patch` part of the version. In strict mode, all
-  !> major, minor and patch versions must be provided.
+  !> major, minor and patch versions must be provided. Implicit zeros are
+  !> forbidden in strict mode.
   subroutine build_mmp(this, str, error, strict_mode)
     type(version_t), intent(out) :: this
     character(len=*), intent(in) :: str
@@ -661,7 +664,8 @@ contains
 
   !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
   !> wish to receive detailed error messages. In strict mode, all major, minor
-  !> and patch versions must be provided.
+  !> and patch versions must be provided. Implicit zeros are forbidden in strict
+  !> mode.
   logical function is_version(str, strict_mode)
     character(len=*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
@@ -673,4 +677,4 @@ contains
     is_version = .not. allocated(error)
   end
 
-end module version_f
+end
