@@ -20,7 +20,8 @@ jobs:
         env:
           GCC_VERSION: 10
         run: |
-          brew install gcc
+          brew install gcc@$GCC_VERSION
+          ln -s /usr/local/bin/gfortran-$GCC_VERSION /usr/local/bin/gfortran
 
       - name: Test fpm
         run: |
