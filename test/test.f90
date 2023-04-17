@@ -274,6 +274,13 @@ program test
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
 
+  call v1%parse('..', e)
+  if (allocated(e)) then
+    call fail(e%msg)
+  else if (v1%to_string() /= '0.0.0') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
   call v1%parse('', e)
   if (.not. allocated(e)) call fail('An empty string should fail.')
 
@@ -802,6 +809,107 @@ program test
   v2 = version_t(0, 1, 0, 'a', '1.123')
   if (v1%is_exactly(v2)) call fail('0.1.0-a+1.1 is not exactly 0.1.0-1.123.')
   if (v2%is_exactly(v1)) call fail('0.1.0-a+1.1 is not exactly 0.1.0-1.123.')
+
+  !############################### strict_mode ################################!
+
+  v1 = version_t(1, 0, 0, strict_mode=.true.)
+  if (v1%to_string() /= '1.0.0') then
+    call fail("Strict mode: Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(0, 0, 0, strict_mode=.true.)
+  if (v1%to_string() /= '0.0.0') then
+    call fail("Strict mode: Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(0, 1, 0, 'abc', 'def', strict_mode=.true.)
+  if (v1%to_string() /= '0.1.0-abc+def') then
+    call fail("Strict mode: Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(3, strict_mode=.false.)
+  if (v1%to_string() /= '3.0.0') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(3, patch=2, build='cde', strict_mode=.false.)
+  if (v1%to_string() /= '3.0.2+cde') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  call v1%create(1, error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No minor and patch.')
+
+  call v1%create(1, 2, error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Patch not provided.')
+
+  call v1%create(1, patch=2, error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Minor not provided.')
+
+  call v1%create(1, 2, 3, error=e, strict_mode=.true.)
+  if (allocated(e)) call fail('Strict mode: Everything is provided.')
+
+  call v1%create(1, 2, 3, '1', '2', error=e, strict_mode=.true.)
+  if (allocated(e)) call fail('Strict mode: Everything is provided.')
+
+  call v1%create(1, 2, prerelease='1', build='2', error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No patch.')
+
+  call v1%create(1, patch=2, prerelease='1', build='2', error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No minor.')
+
+  call v1%create(1, 2, prerelease='1', build='2', error=e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Missing patch.')
+
+  call v1%create(1, error=e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Missing minor and patch.')
+
+  call v1%parse('1.2.3', error=e, strict_mode=.true.)
+  if (allocated(e)) call fail('Strict mode: All is provided.')
+
+  call v1%parse('1.2', error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No patch.')
+
+  call v1%parse('1', error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No minor, no patch.')
+
+  call v1%parse('1-1+1', error=e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No minor, no patch.')
+
+  call v1%parse('0', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No minor, no patch.')
+
+  call v1%parse('.', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No patch.')
+
+  call v1%parse('0.1', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No patch.')
+
+  call v1%parse('.2.988', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit major.')
+
+  call v1%parse('1..988', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit minor.')
+
+  call v1%parse('100.1.', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit patch.')
+
+  call v1%parse('..', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: No implicit major, minor and patch.')
+
+  call v1%parse('.', e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Has implicit major, minor and patch.')
+
+  call v1%parse('1.2', e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Has implicit major, minor and patch.')
+
+  if (is_version('1', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
+  if (is_version('1+123', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
+  if (is_version('1.0+123', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
+  if (is_version('1.0', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
+  if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail("Strict mode: Is valid version.")
+  if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
+  if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
 
 contains
 
