@@ -64,9 +64,17 @@ module version_f
     procedure, private :: string_t_is_numeric
   end type
 
+  interface string_t
+    module procedure :: create_string_t
+  end interface
+
   type :: error_t
     character(len=:), allocatable :: msg
   end type
+
+  interface error_t
+    module procedure :: create_error_t
+  end interface
 
 contains
 
@@ -79,8 +87,8 @@ contains
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
     integer, optional, intent(in) :: patch
-    character(len=*), optional, intent(in) :: prerelease
-    character(len=*), optional, intent(in) :: build
+    character(*), optional, intent(in) :: prerelease
+    character(*), optional, intent(in) :: build
     logical, optional, intent(in) :: strict_mode
     type(version_t) :: this
 
@@ -132,14 +140,18 @@ contains
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
     integer, optional, intent(in) :: patch
-    character(len=*), optional, intent(in) :: prerelease
-    character(len=*), optional, intent(in) :: build
+    character(*), optional, intent(in) :: prerelease
+    character(*), optional, intent(in) :: build
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
 
-    logical :: is_strict_mode = .false.
+    logical :: is_strict_mode
 
-    if (present(strict_mode)) is_strict_mode = strict_mode
+    if (present(strict_mode)) then
+      is_strict_mode = strict_mode
+    else
+      is_strict_mode = .false.
+    end if
 
     if (major < 0) then
       error = error_t('Version numbers must not be negative.'); return
@@ -267,8 +279,7 @@ contains
 
     if (allocated(ids)) then
       if (ids(size(ids))%is_numeric()) then
-        ids = [ids(1:size(ids) - 1), &
-        & string_t(trim(int2s(ids(size(ids))%num() + 1)))]
+        ids = [ids(1:size(ids) - 1), string_t(trim(int2s(ids(size(ids))%num() + 1)))]
       else
         ids = [ids, string_t('1')]
       end if
@@ -287,7 +298,7 @@ contains
   !> In strict mode, all major, minor and patch versions must be provided. Implicit
   !> zeros are forbidden in strict mode.
   function parse(str, strict_mode) result(version)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
     type(version_t) :: version
 
@@ -302,7 +313,7 @@ contains
   !> Implicit zeros are forbidden in strict mode.
   subroutine try_parse(this, str, error, strict_mode)
     class(version_t), intent(out) :: this
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
 
@@ -335,14 +346,18 @@ contains
   !> forbidden in strict mode.
   subroutine build_mmp(this, str, error, strict_mode)
     type(version_t), intent(out) :: this
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
 
     integer :: i, j, l
-    logical :: is_strict_mode = .false.
+    logical :: is_strict_mode
 
-    if (present(strict_mode)) is_strict_mode = strict_mode
+    if (present(strict_mode)) then
+      is_strict_mode = strict_mode
+    else
+      is_strict_mode = .false.
+    end if
 
     this%major = 0
     this%minor = 0
@@ -391,7 +406,7 @@ contains
 
   !> Convert a string to an integer.
   pure subroutine s2int(str, num, error)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     integer, intent(out) :: num
     type(error_t), allocatable, intent(out) :: error
 
@@ -411,7 +426,7 @@ contains
 
   !> Wrapper function for `s2int`.
   pure integer function s2i(str)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
 
     type(error_t), allocatable :: e
 
@@ -446,30 +461,30 @@ contains
   !> the string.
   pure subroutine build_identifiers(ids, str, error)
     type(string_t), allocatable, intent(out) :: ids(:)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
-    character(len=*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
+    character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
     character(len=:), allocatable :: string
     integer :: i
 
     if (len_trim(str) == 0) then
-      error = error_t('Entered data cannot be empty.'); return
+      error = error_t('Identifier must not be empty.'); return
     end if
 
     do i = 1, len(str)
       if (index(valid_chars, str(i:i)) == 0) then
-        error = error_t("Data contains invalid character: '"//str//"'."); return
+        error = error_t("Invalid character in '"//str//"'."); return
       end if
     end do
 
+    ! Last character must not be a dot.
+    if (str(len(str):len(str)) == '.') then
+      error = error_t('Identifier must not end with a dot.'); return
+    end if
+
     string = str
     allocate (ids(0))
-
-    ! Last character must not be a dot.
-    if (string(len(string):len(string)) == '.') then
-      error = error_t('Data must not start or end with a dot.'); return
-    end if
 
     do
       i = index(string, '.')
@@ -491,7 +506,7 @@ contains
 
   !> Validate an identifier.
   pure subroutine validate_identifier(str, error)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
     ! Identifiers must not start with `.`.
@@ -507,7 +522,7 @@ contains
 
   !> Check if a string is purely numeric.
   pure function is_numeric(str)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     logical :: is_numeric
 
     is_numeric = verify(str, '0123456789') == 0
@@ -667,7 +682,7 @@ contains
   !> and patch versions must be provided. Implicit zeros are forbidden in strict
   !> mode.
   logical function is_version(str, strict_mode)
-    character(len=*), intent(in) :: str
+    character(*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
 
     type(version_t) :: version
@@ -677,4 +692,19 @@ contains
     is_version = .not. allocated(error)
   end
 
+  !> Helper function to generate a new `string_t` instance.
+  pure function create_string_t(inp_str) result(string)
+    character(*), intent(in) :: inp_str
+    type(string_t) :: string
+
+    string%str = inp_str
+  end
+
+  !> Helper function to generate a new `error_t` instance.
+  pure function create_error_t(msg) result(err)
+    character(*), intent(in) :: msg
+    type(error_t) :: err
+
+    err%msg = msg
+  end
 end

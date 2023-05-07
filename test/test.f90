@@ -914,7 +914,7 @@ program test
 contains
 
   subroutine fail(msg)
-    character(len=*), intent(in) :: msg
+    character(*), intent(in) :: msg
     print *, achar(27)//'[31m'//'Test failed: '//msg//achar(27)//'[0m'
     stop 1
   end
