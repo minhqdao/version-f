@@ -24,7 +24,7 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly
+    & increment_prerelease, increment_build, is_exactly, satisfies
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -709,5 +709,92 @@ contains
     type(error_t) :: err
 
     err%msg = msg
+  end
+
+  !> Determine whether the version meets the comparison expressed in `str`.
+  !>
+  !> Valid operators are `>`, `>=`, `<`, `<=`, `=` and `!=`.
+  !>
+  !> Example:
+  !>
+  !> program main
+  !>   use version_f
+  !>   implicit none
+  !>
+  !>   type(version_t) :: version
+  !>   character(*), parameter :: requirement = '>=1.2.3'
+  !>   logical :: is_satisfied
+  !>   type(error_t), allocatable :: error
+  !>
+  !>   version = version_t(1, 2, 3)
+  !>   call version%satisfies(requirement, is_satisfied, error)
+  !>   if (allocated(error)) return
+  !>
+  !>   if (is_satisfied) then
+  !>     print *, "Version '", version%to_string(), "' meets the requirement '", requirement, "'."
+  !>   else
+  !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
+  !>   end if
+  !> end
+  subroutine satisfies(this, string, result, error)
+    class(version_t), intent(in) :: this
+
+    !> Input string to be evaluated.
+    character(len=*), intent(in) :: string
+
+    !> Whether the version meets the comparison expressed in `str`.
+    logical, intent(out) :: result
+
+    !> Error handling.
+    type(error_t), allocatable, intent(out) :: error
+
+    character(:), allocatable :: str
+    type(version_t) :: parsed_version
+
+    str = adjustl(trim(string))
+
+    if (len(str) == 0) then
+      error = error_t('Do not compare empty expressions.'); return
+    end if
+
+    if (str(1:1) == '>') then
+      if (str(2:2) == '=') then
+        str = str(3:)
+        call parsed_version%parse(str, error)
+        if (allocated(error)) return
+        result = this >= parsed_version; return
+      end if
+
+      str = str(2:)
+      call parsed_version%parse(str, error)
+      if (allocated(error)) return
+      result = this > parsed_version; return
+    end if
+
+    if (str(1:1) == '<') then
+      if (str(2:2) == '=') then
+        str = str(3:)
+        call parsed_version%parse(str, error)
+        if (allocated(error)) return
+        result = this <= parsed_version; return
+      end if
+
+      str = str(2:)
+      call parsed_version%parse(str, error)
+      if (allocated(error)) return
+      result = this < parsed_version; return
+    end if
+
+    if (str(1:2) == '!=') then
+      str = str(3:)
+      call parsed_version%parse(str, error)
+      if (allocated(error)) return
+      result = this /= parsed_version; return
+    end if
+
+    if (str(1:1) == '=') str = str(2:)
+    call parsed_version%parse(str, error)
+    if (allocated(error)) return
+    result = this == parsed_version
   end
 end

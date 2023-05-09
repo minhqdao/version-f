@@ -1,8 +1,10 @@
 program test
   use version_f, only: version_t, is_version, error_t
+
   implicit none
 
   type(version_t) :: v1, v2
+  logical :: is_satisfied
   type(error_t), allocatable :: e
 
 !################################### Create ###################################!
@@ -910,6 +912,168 @@ program test
   if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail("Strict mode: Is valid version.")
   if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
   if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
+
+  !##################################satisfies#################################!
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-1 should fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies(' ', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-2 should fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-3 should satisfy.')
+  if (allocated(e)) call fail('satisfy-3 should not fail.')
+
+  v1 = version_t(0, 1, 0, 'abc')
+  call v1%satisfies('0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-4 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-4 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('0.1.0-abc', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-5 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-5 should not fail.')
+
+  v1 = version_t(0, 1, 0, 'abc')
+  call v1%satisfies('0.1.0-cde', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-6 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-6 should not fail.')
+
+  v1 = version_t(0, 1, 0, 'abc', 'cde')
+  call v1%satisfies('0.1.0-abc', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-7 should satisfy.')
+  if (allocated(e)) call fail('satisfy-7 should not fail.')
+
+  v1 = version_t(0, 1, 0, 'abc', 'cde')
+  call v1%satisfies('0.1.0-abc+xyz', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-8 should satisfy.')
+  if (allocated(e)) call fail('satisfy-8 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('  0.1.0  ', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-9 should satisfy.')
+  if (allocated(e)) call fail('satisfy-9 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('  0.1.0+abc  ', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-10 should satisfy.')
+  if (allocated(e)) call fail('satisfy-10 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('0.2.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-11 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-11 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('0.2.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-12 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-12 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('=0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-13 should satisfy.')
+  if (allocated(e)) call fail('satisfy-13 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('=   0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-14 should satisfy.')
+  if (allocated(e)) call fail('satisfy-14 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('= 0.2.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-15 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-15 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('!=0.2.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-16 should satisfy.')
+  if (allocated(e)) call fail('satisfy-16 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('!=0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-17 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-17 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('!= 0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-18 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-18 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('0.1.0abcd', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-19 should fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('=0.1.0abcd', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-20 should fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('>0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-20 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-20 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('>0.1.0-1', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-21 should satisfy.')
+  if (allocated(e)) call fail('satisfy-21 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('> 0.0.9', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-22 should satisfy.')
+  if (allocated(e)) call fail('satisfy-22 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('>=0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-23 should satisfy.')
+  if (allocated(e)) call fail('satisfy-23 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('>=   0.1.0-678', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-24 should satisfy.')
+  if (allocated(e)) call fail('satisfy-24 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('>=0.1.0+123', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-25 should satisfy.')
+  if (allocated(e)) call fail('satisfy-25 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('<0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-26 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-26 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('< 0.1.0-1', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-27 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-27 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('< 0.0.9', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-28 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-28 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('<=0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-29 should satisfy.')
+  if (allocated(e)) call fail('satisfy-29 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('<=   0.1.0-678', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-30 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-30 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies('<=0.1.0+123', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-30 should satisfy.')
+  if (allocated(e)) call fail('satisfy-30 should not fail.')
+
+  v1 = version_t(0, 1, 0)
+  call v1%satisfies(' abc ', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-31 should fail.')
 
 contains
 
