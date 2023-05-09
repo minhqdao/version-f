@@ -24,7 +24,7 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly, satisfies
+    & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -727,7 +727,7 @@ contains
   !>   type(error_t), allocatable :: error
   !>
   !>   version = version_t(1, 2, 3)
-  !>   call version%satisfies(requirement, is_satisfied, error)
+  !>   call version%try_satisfy(requirement, is_satisfied, error)
   !>   if (allocated(error)) return
   !>
   !>   if (is_satisfied) then
@@ -736,7 +736,7 @@ contains
   !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
   !>   end if
   !> end
-  subroutine satisfies(this, string, result, error)
+  subroutine try_satisfy(this, string, result, error)
     class(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
@@ -796,5 +796,22 @@ contains
     call parsed_version%parse(str, error)
     if (allocated(error)) return
     result = this == parsed_version
+  end
+
+  !> Convenience function to determine whether the version meets the comparison.
+  !>
+  !> This function is a wrapper around `try_satisfy`. It returns `.false.` if
+  !> the comparison fails.
+  logical function satisfies(this, str)
+    !> Instance of `version_t` to be evaluated.
+    class(version_t), intent(in) :: this
+
+    !> Input string to be evaluated.
+    character(*), intent(in) :: str
+
+    type(error_t), allocatable :: error
+
+    call this%try_satisfy(str, satisfies, error)
+    if (allocated(error)) satisfies = .false.
   end
 end
