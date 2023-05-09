@@ -56,7 +56,7 @@ module version_f
   end interface
 
   type :: string_t
-    character(len=:), allocatable :: str
+    character(:), allocatable :: str
   contains
     generic :: num => string_t_2i
     procedure, private :: string_t_2i
@@ -69,7 +69,7 @@ module version_f
   end interface
 
   type :: error_t
-    character(len=:), allocatable :: msg
+    character(:), allocatable :: msg
   end type
 
   interface error_t
@@ -197,7 +197,7 @@ contains
   !> build data.
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
-    character(len=:), allocatable :: str
+    character(:), allocatable :: str
 
     integer :: i
 
@@ -414,7 +414,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
-    character(len=1) :: c
+    character(1) :: c
 
     num = 0
     do i = 1, len(str)
@@ -450,7 +450,7 @@ contains
   !> Convert an integer to a string.
   pure function int2s(num) result(str)
     integer, intent(in) :: num
-    character(len=:), allocatable :: str
+    character(:), allocatable :: str
 
     if (num == 0) then
       str = '0'
@@ -468,7 +468,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
-    character(len=:), allocatable :: string
+    character(:), allocatable :: string
     integer :: i
 
     if (len_trim(str) == 0) then
@@ -740,7 +740,7 @@ contains
     class(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
-    character(len=*), intent(in) :: string
+    character(*), intent(in) :: string
 
     !> Whether the version meets the comparison expressed in `str`.
     logical, intent(out) :: result
