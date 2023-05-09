@@ -311,13 +311,16 @@ contains
   !> Attempt to parse a string into a version including prerelease and build
   !> data. In strict mode, all major, minor and patch versions must be provided.
   !> Implicit zeros are forbidden in strict mode.
-  subroutine try_parse(this, str, error, strict_mode)
+  subroutine try_parse(this, string, error, strict_mode)
     class(version_t), intent(out) :: this
-    character(*), intent(in) :: str
+    character(*), intent(in) :: string
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
 
     integer :: i, j
+    character(:), allocatable :: str
+
+    str = trim(adjustl(string))
 
     i = index(str, '-')
     j = index(str, '+')
