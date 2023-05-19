@@ -445,7 +445,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
-    character(1) :: c
+    character :: c
 
     num = 0
     do i = 1, len(str)
