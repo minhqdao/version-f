@@ -1479,6 +1479,8 @@ program test
   if (range%comp_sets(1)%comps(3)%version /= version_t(0, 3)) call fail('parse-version-range-11: Wrong version.')
   if (allocated(e)) call fail('parse-version-range-11 should not fail.')
 
+  print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
+
 contains
 
   subroutine fail(msg)
