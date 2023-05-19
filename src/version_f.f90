@@ -6,7 +6,7 @@ module version_f
   private
 
   public :: version_t, string_t, error_t, is_version, version_range_t, &
-            comparator_set_t, comparator_t, op_index
+            comparator_set_t, comparator_t, operator_index
 
   !> Contains all version information.
   type :: version_t
@@ -908,7 +908,7 @@ contains
 
     str = trim(adjustl(str(len(op) + 1:)))
 
-    i = op_index(str)
+    i = operator_index(str)
     if (i == 0) then
       call comp%version%parse(str, error)
       str = ''
@@ -920,7 +920,7 @@ contains
   end
 
   !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
-  pure integer function op_index(str)
+  pure integer function operator_index(str)
     character(*), intent(in) :: str
 
     integer :: i
@@ -929,11 +929,11 @@ contains
     do i = 1, len(str)
       char = str(i:i)
       if (char == '>' .or. char == '<' .or. char == '!' .or. char == '=' .or. char == ' ') then
-        op_index = i; return
+        operator_index = i; return
       end if
     end do
 
-    op_index = 0
+    operator_index = 0
   end
 
   pure subroutine satisfies_comp_set(version, comp_set, is_satisfied, error)

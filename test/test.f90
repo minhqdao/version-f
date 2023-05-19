@@ -916,21 +916,21 @@ program test
   if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
   if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
 
-!###################################op_index###################################!
+!################################operator_index################################!
 
-  if (op_index('') /= 0) call fail('op-index-1 failed.')
-  if (op_index(' ') /= 1) call fail('op-index-2 failed.')
-  if (op_index('      ') /= 1) call fail('op-index-3 failed.')
-  if (op_index('<') /= 1) call fail('op-index-4 failed.')
-  if (op_index('>') /= 1) call fail('op-index-5 failed.')
-  if (op_index('!') /= 1) call fail('op-index-6 failed.')
-  if (op_index('=') /= 1) call fail('op-index-7 failed.')
-  if (op_index('asdfj76r58>') /= 11) call fail('op-index-8 failed.')
-  if (op_index('asdfj76r58 ') /= 11) call fail('op-index-8 failed.')
-  if (op_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-8 failed.')
-  if (op_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-9 failed.')
-  if (op_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-10 failed.')
-  if (op_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-11 failed.')
+  if (operator_index('') /= 0) call fail('op-index-1 failed.')
+  if (operator_index(' ') /= 1) call fail('op-index-2 failed.')
+  if (operator_index('      ') /= 1) call fail('op-index-3 failed.')
+  if (operator_index('<') /= 1) call fail('op-index-4 failed.')
+  if (operator_index('>') /= 1) call fail('op-index-5 failed.')
+  if (operator_index('!') /= 1) call fail('op-index-6 failed.')
+  if (operator_index('=') /= 1) call fail('op-index-7 failed.')
+  if (operator_index('asdfj76r58>') /= 11) call fail('op-index-8 failed.')
+  if (operator_index('asdfj76r58 ') /= 11) call fail('op-index-8 failed.')
+  if (operator_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-8 failed.')
+  if (operator_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-9 failed.')
+  if (operator_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-10 failed.')
+  if (operator_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-11 failed.')
 
 !##################################try_satisfy#################################!
 
