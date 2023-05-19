@@ -1,10 +1,13 @@
 program test
-  use version_f, only: version_t, is_version, error_t
+  use version_f
 
   implicit none
 
   type(version_t) :: v1, v2
   logical :: is_satisfied
+  type(comparator_t), allocatable :: comps(:)
+  type(comparator_set_t) :: comp_set
+  type(version_range_t) :: range
   type(error_t), allocatable :: e
 
 !################################### Create ###################################!
@@ -913,185 +916,556 @@ program test
   if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
   if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
 
-  !##################################satisfies#################################!
+!###################################op_index###################################!
+
+  if (op_index('') /= 0) call fail('op-index-1 failed.')
+  if (op_index(' ') /= 1) call fail('op-index-2 failed.')
+  if (op_index('      ') /= 1) call fail('op-index-3 failed.')
+  if (op_index('<') /= 1) call fail('op-index-4 failed.')
+  if (op_index('>') /= 1) call fail('op-index-5 failed.')
+  if (op_index('!') /= 1) call fail('op-index-6 failed.')
+  if (op_index('=') /= 1) call fail('op-index-7 failed.')
+  if (op_index('asdfj76r58>') /= 11) call fail('op-index-8 failed.')
+  if (op_index('asdfj76r58 ') /= 11) call fail('op-index-8 failed.')
+  if (op_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-8 failed.')
+  if (op_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-9 failed.')
+  if (op_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-10 failed.')
+  if (op_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-11 failed.')
+
+!###################################satisfies##################################!
 
   v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('', is_satisfied, e)
+
+  call v1%satisfies('', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-1 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy(' ', is_satisfied, e)
+  call v1%satisfies(' ', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-2 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('0.1.0', is_satisfied, e)
+  call v1%satisfies('0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-3 should satisfy.')
   if (allocated(e)) call fail('satisfy-3 should not fail.')
 
   v1 = version_t(0, 1, 0, 'abc')
-  call v1%try_satisfy('0.1.0', is_satisfied, e)
+  call v1%satisfies('0.1.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-4 should not satisfy.')
   if (allocated(e)) call fail('satisfy-4 should not fail.')
 
   v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('0.1.0-abc', is_satisfied, e)
+  call v1%satisfies('0.1.0-abc', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-5 should not satisfy.')
   if (allocated(e)) call fail('satisfy-5 should not fail.')
 
   v1 = version_t(0, 1, 0, 'abc')
-  call v1%try_satisfy('0.1.0-cde', is_satisfied, e)
+  call v1%satisfies('0.1.0-cde', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-6 should not satisfy.')
   if (allocated(e)) call fail('satisfy-6 should not fail.')
 
   v1 = version_t(0, 1, 0, 'abc', 'cde')
-  call v1%try_satisfy('0.1.0-abc', is_satisfied, e)
+  call v1%satisfies('0.1.0-abc', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-7 should satisfy.')
   if (allocated(e)) call fail('satisfy-7 should not fail.')
 
   v1 = version_t(0, 1, 0, 'abc', 'cde')
-  call v1%try_satisfy('0.1.0-abc+xyz', is_satisfied, e)
+  call v1%satisfies('0.1.0-abc+xyz', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-8 should satisfy.')
   if (allocated(e)) call fail('satisfy-8 should not fail.')
 
   v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('  0.1.0  ', is_satisfied, e)
+  call v1%satisfies('  0.1.0  ', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-9 should satisfy.')
   if (allocated(e)) call fail('satisfy-9 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('  0.1.0+abc  ', is_satisfied, e)
+  call v1%satisfies('  0.1.0+abc  ', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-10 should satisfy.')
   if (allocated(e)) call fail('satisfy-10 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('0.2.0', is_satisfied, e)
+  call v1%satisfies('0.2.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-11 should not satisfy.')
   if (allocated(e)) call fail('satisfy-11 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('0.2.0', is_satisfied, e)
+  call v1%satisfies('0.2.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-12 should not satisfy.')
   if (allocated(e)) call fail('satisfy-12 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('=0.1.0', is_satisfied, e)
+  call v1%satisfies('=0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-13 should satisfy.')
   if (allocated(e)) call fail('satisfy-13 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('=   0.1.0', is_satisfied, e)
+  call v1%satisfies('=   0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-14 should satisfy.')
   if (allocated(e)) call fail('satisfy-14 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('= 0.2.0', is_satisfied, e)
+  call v1%satisfies('= 0.2.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-15 should not satisfy.')
   if (allocated(e)) call fail('satisfy-15 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('!=0.2.0', is_satisfied, e)
+  call v1%satisfies('!=0.2.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-16 should satisfy.')
   if (allocated(e)) call fail('satisfy-16 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('!=0.1.0', is_satisfied, e)
+  call v1%satisfies('!=0.1.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-17 should not satisfy.')
   if (allocated(e)) call fail('satisfy-17 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('!= 0.1.0', is_satisfied, e)
+  call v1%satisfies('!= 0.1.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-18 should not satisfy.')
   if (allocated(e)) call fail('satisfy-18 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('0.1.0abcd', is_satisfied, e)
+  call v1%satisfies('0.1.0abcd', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-19 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('=0.1.0abcd', is_satisfied, e)
+  call v1%satisfies('=0.1.0abcd', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-20 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('>0.1.0', is_satisfied, e)
-  if (is_satisfied) call fail('satisfy-20 should not satisfy.')
-  if (allocated(e)) call fail('satisfy-20 should not fail.')
-
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('>0.1.0-1', is_satisfied, e)
-  if (.not. is_satisfied) call fail('satisfy-21 should satisfy.')
+  call v1%satisfies('>0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-21 should not satisfy.')
   if (allocated(e)) call fail('satisfy-21 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('> 0.0.9', is_satisfied, e)
+  call v1%satisfies('>0.1.0-1', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-22 should satisfy.')
   if (allocated(e)) call fail('satisfy-22 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('>=0.1.0', is_satisfied, e)
+  call v1%satisfies('> 0.0.9', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-23 should satisfy.')
   if (allocated(e)) call fail('satisfy-23 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('>=   0.1.0-678', is_satisfied, e)
+  call v1%satisfies('>=0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-24 should satisfy.')
   if (allocated(e)) call fail('satisfy-24 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('>=0.1.0+123', is_satisfied, e)
+  call v1%satisfies('>=   0.1.0-678', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-25 should satisfy.')
   if (allocated(e)) call fail('satisfy-25 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('<0.1.0', is_satisfied, e)
-  if (is_satisfied) call fail('satisfy-26 should not satisfy.')
+  call v1%satisfies('>=0.1.0+123', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-26 should satisfy.')
   if (allocated(e)) call fail('satisfy-26 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('< 0.1.0-1', is_satisfied, e)
+  call v1%satisfies('<0.1.0', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-27 should not satisfy.')
   if (allocated(e)) call fail('satisfy-27 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('< 0.0.9', is_satisfied, e)
+  call v1%satisfies('< 0.1.0-1', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-28 should not satisfy.')
   if (allocated(e)) call fail('satisfy-28 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('<=0.1.0', is_satisfied, e)
-  if (.not. is_satisfied) call fail('satisfy-29 should satisfy.')
+  call v1%satisfies('< 0.0.9', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-29 should not satisfy.')
   if (allocated(e)) call fail('satisfy-29 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('<=   0.1.0-678', is_satisfied, e)
-  if (is_satisfied) call fail('satisfy-30 should not satisfy.')
-  if (allocated(e)) call fail('satisfy-30 should not fail.')
-
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy('<=0.1.0+123', is_satisfied, e)
+  call v1%satisfies('<=0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-30 should satisfy.')
   if (allocated(e)) call fail('satisfy-30 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  call v1%try_satisfy(' abc ', is_satisfied, e)
-  if (.not. allocated(e)) call fail('satisfy-31 should fail.')
+  call v1%satisfies('<=   0.1.0-678', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-31 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-31 should not fail.')
+
+  call v1%satisfies('<=0.1.0+123', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-32 should satisfy.')
+  if (allocated(e)) call fail('satisfy-32 should not fail.')
+
+  call v1%satisfies(' abc ', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-33 should fail.')
+
+  call v1%satisfies('0.0.1 1.0.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-34 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-34 should not fail.')
+
+  call v1%satisfies('0.0.1 0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-35 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-35 should not fail.')
+
+  call v1%satisfies('  > 1.0.1 <  2.1.0 ', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-36 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-36 should not fail.')
+
+  call v1%satisfies('>0.0.1 <=0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-37 should satisfy.')
+  if (allocated(e)) call fail('satisfy-37 should not fail.')
+
+  call v1%satisfies('>0.0.1 <0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-38 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-38 should not fail.')
+
+  call v1%satisfies('<0.1.0 || 0.0.1', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-39 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-39 should not fail.')
+
+  call v1%satisfies('<0.1.0 || 0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-40 should satisfy.')
+  if (allocated(e)) call fail('satisfy-40 should not fail.')
+
+  call v1%satisfies('<0.1.0 || >0.1.0 || != 0.1.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-41 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-41 should not fail.')
+
+  call v1%satisfies('<0.1.0 || >0.1.0 || =0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-42 should satisfy.')
+  if (allocated(e)) call fail('satisfy-42 should not fail.')
+
+  call v1%satisfies('<0.1.0 0.1.0 >2.0.0 || !=0.1.0 <0.2.1', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-43 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-43 should not fail.')
+
+  call v1%satisfies('>=0.1.0 <2.0.0 || >0.2.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-44 should satisfy.')
+  if (allocated(e)) call fail('satisfy-44 should not fail.')
+
+  call v1%satisfies('2.1.0 2.0.0 0.1.0 || >=0.2.0', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-45 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-45 should not fail.')
+
+  call v1%satisfies('>0.1.0 <2.0.0 0.1.0 ||  <=0.2.0   0.1.0', is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfy-46 should satisfy.')
+  if (allocated(e)) call fail('satisfy-46 should not fail.')
+
+  call v1%satisfies('>0.1.0 <2.0.0 0.1.0 ||  <=0.2.0   0.0.9', is_satisfied, e)
+  if (is_satisfied) call fail('satisfy-47 should not satisfy.')
+  if (allocated(e)) call fail('satisfy-47 should not fail.')
+
+!################################satisfies_comp################################!
 
   v1 = version_t(0, 1, 0)
-  if (v1%satisfies('  ')) call fail('satisfy-32 should fail.')
+  call v1%satisfies_comp(comparator_t('abc', version_t(1)), is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfies-comp-1 should fail.')
+
+  call v1%satisfies_comp(comparator_t('=', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-2 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-2 should not be true.')
+  call v1%satisfies_comp(comparator_t('', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-3 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-3 should not be true.')
+  call v1%satisfies_comp(comparator_t('!=', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-4 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-4 should be true.')
+  call v1%satisfies_comp(comparator_t('>', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-5 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-5 should not be true.')
+  call v1%satisfies_comp(comparator_t('>=', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-6 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-6 should not be true.')
+  call v1%satisfies_comp(comparator_t('<', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-7 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-7 should be true.')
+  call v1%satisfies_comp(comparator_t('<=', version_t(1)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-8 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-8 should be true.')
+
+  call v1%satisfies_comp(comparator_t('=', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-9 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-9 should not be true.')
+  call v1%satisfies_comp(comparator_t('', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-10 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-10 should not be true.')
+  call v1%satisfies_comp(comparator_t('!=', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-11 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-11 should be true.')
+  call v1%satisfies_comp(comparator_t('>', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-12 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-12 should be true.')
+  call v1%satisfies_comp(comparator_t('>=', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-13 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-13 should be true.')
+  call v1%satisfies_comp(comparator_t('<', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-14 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-14 should not be true.')
+  call v1%satisfies_comp(comparator_t('<=', version_t(0, 0, 9)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-15 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-15 should not be true.')
+
+  call v1%satisfies_comp(comparator_t('=', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-16 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-16 should be true.')
+  call v1%satisfies_comp(comparator_t('', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-17 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-17 should be true.')
+  call v1%satisfies_comp(comparator_t('!=', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-18 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-18 should not be true.')
+  call v1%satisfies_comp(comparator_t('>', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-19 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-19 should not be true.')
+  call v1%satisfies_comp(comparator_t('>=', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-20 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-20 should be true.')
+  call v1%satisfies_comp(comparator_t('<', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-21 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-21 should not be true.')
+  call v1%satisfies_comp(comparator_t('<=', version_t(0, 1, 0)), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-22 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-22 should be true.')
+
+  call v1%satisfies_comp(comparator_t('=', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-23 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-23 should not be true.')
+  call v1%satisfies_comp(comparator_t('', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-24 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-24 should not be true.')
+  call v1%satisfies_comp(comparator_t('!=', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-25 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-25 should be true.')
+  call v1%satisfies_comp(comparator_t('>', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-26 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-26 should be true.')
+  call v1%satisfies_comp(comparator_t('>=', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-27 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-27 should be true.')
+  call v1%satisfies_comp(comparator_t('<', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-28 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-28 should not be true.')
+  call v1%satisfies_comp(comparator_t('<=', version_t(0, 1, 0, 'abc')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-29 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-29 should not be true.')
+
+  call v1%satisfies_comp(comparator_t('=', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-30 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-30 should be true.')
+  call v1%satisfies_comp(comparator_t('', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-31 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-31 should be true.')
+  call v1%satisfies_comp(comparator_t('!=', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-32 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-32 should not be true.')
+  call v1%satisfies_comp(comparator_t('>', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-33 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-33 should not be true.')
+  call v1%satisfies_comp(comparator_t('>=', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-34 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-34 should be true.')
+  call v1%satisfies_comp(comparator_t('<', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-29 should not fail.')
+  if (is_satisfied) call fail('satisfies-comp-29 should not be true.')
+  call v1%satisfies_comp(comparator_t('<=', version_t(0, 1, 0, build='1')), is_satisfied, e)
+  if (allocated(e)) call fail('satisfies-comp-30 should not fail.')
+  if (.not. is_satisfied) call fail('satisfies-comp-30 should be true.')
+
+!##############################satisfies_comp_set##############################!
 
   v1 = version_t(0, 1, 0)
-  if (v1%satisfies('abc')) call fail('satisfy-33 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  if (.not. v1%satisfies('0.1.0')) call fail('satisfy-34 should not fail.')
+  if (allocated(comps)) deallocate (comps)
+  allocate (comps(0))
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfies-comp-set-1 should fail.')
 
-  v1 = version_t(0, 1, 0)
-  if (.not. v1%satisfies('>=0.1.0')) call fail('satisfy-35 should not fail.')
+  comps = [comparator_t('=', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-2 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-2 should not fail.')
+  comps = [comparator_t('', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-2 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-2 should not fail.')
+  comps = [comparator_t('!=', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-3 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-3 should not fail.')
+  comps = [comparator_t('>', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-4 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-4 should not fail.')
+  comps = [comparator_t('>=', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-5 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-5 should not fail.')
+  comps = [comparator_t('<', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-6 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-6 should not fail.')
+  comps = [comparator_t('<=', version_t(0, 1, 0))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-7 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-7 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  if (v1%satisfies('>0.1.0')) call fail('satisfy-36 should fail.')
+  comps = [comparator_t('=', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-8 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-8 should not fail.')
+  comps = [comparator_t('', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-8 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-8 should not fail.')
+  comps = [comparator_t('!=', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-9 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-9 should not fail.')
+  comps = [comparator_t('>', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-10 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-10 should not fail.')
+  comps = [comparator_t('>=', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-11 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-11 should not fail.')
+  comps = [comparator_t('<', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-12 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-12 should not fail.')
+  comps = [comparator_t('<=', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-13 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-13 should not fail.')
 
-  v1 = version_t(0, 1, 0)
-  if (v1%satisfies('>=0.1.0-....')) call fail('satisfy-37 should fail.')
+  comps = [comparator_t('!=', version_t(1)), comparator_t('>', version_t(0, 9))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-14 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-14 should not fail.')
+
+  comps = [comparator_t('=', version_t(1)), comparator_t('<', version_t(0, 9))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-15 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-15 should not fail.')
+
+  comps = [comparator_t('', version_t(1)), comparator_t('>', version_t(0, 9))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-16 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-16 should not fail.')
+
+  comps = [comparator_t('!=', version_t(1)), comparator_t('<', version_t(0, 9))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-17 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-17 should not fail.')
+
+  comps = [comparator_t('', version_t(1)), comparator_t('', version_t(2))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-18 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-18 should not fail.')
+
+  comps = [comparator_t('', version_t(0, 1)), comparator_t('', version_t(1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-19 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-19 should not fail.')
+
+  comps = [comparator_t('', version_t(1)), comparator_t('', version_t(0, 1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-20 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-20 should not fail.')
+
+  comps = [comparator_t('!=', version_t(1)), comparator_t('', version_t(0, 1))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (.not. is_satisfied) call fail('satisfies-comp-set-21 should satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-21 should not fail.')
+
+  comps = [comparator_t('<', version_t(0, 1)), comparator_t('', version_t(0, 1)), comparator_t('>', version_t(2))]
+  call v1%satisfies_comp_set(comparator_set_t(comps), is_satisfied, e)
+  if (is_satisfied) call fail('satisfies-comp-set-22 should not satisfy.')
+  if (allocated(e)) call fail('satisfies-comp-set-22 should not fail.')
+
+!################################parse_comp_set################################!
+
+  call comp_set%parse('abc', e)
+  if (.not. allocated(e)) call fail('parse-comp-set-1 should fail.')
+
+  call comp_set%parse('>0.0.1', e)
+  if (comp_set%comps(1)%op /= '>') call fail("parse-comp-set-2: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(0, 0, 1)) call fail('parse-comp-set-2: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-2 should not fail.')
+
+  call comp_set%parse('> 0.0.1', e)
+  if (comp_set%comps(1)%op /= '>') call fail("parse-comp-set-3: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(0, 0, 1)) call fail('parse-comp-set-3: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-3 should not fail.')
+
+  call comp_set%parse('1', e)
+  if (comp_set%comps(1)%op /= '') call fail("parse-comp-set-4: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1)) call fail('parse-comp-set-4: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-4 should not fail.')
+
+  call comp_set%parse('1.0.0 1.0.1', e)
+  if (comp_set%comps(1)%op /= '') call fail("parse-comp-set-5: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1)) call fail('parse-comp-set-5: Version does not match.')
+  if (comp_set%comps(2)%op /= '') call fail("parse-comp-set-5: Wrong operator parsed.")
+  if (comp_set%comps(2)%version /= version_t(1, 0, 1)) call fail('parse-comp-set-5: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-5 should not fail.')
+
+  call comp_set%parse('=1.0.0 !=1.0.1', e)
+  if (comp_set%comps(1)%op /= '=') call fail("parse-comp-set-6: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1)) call fail('parse-comp-set-6: Version does not match.')
+  if (comp_set%comps(2)%op /= '!=') call fail("parse-comp-set-6: Wrong operator parsed.")
+  if (comp_set%comps(2)%version /= version_t(1, 0, 1)) call fail('parse-comp-set-6: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-6 should not fail.')
+
+  call comp_set%parse('<  1.0.0 > 1.0.1 =2', e)
+  if (size(comp_set%comps) /= 3) call fail("parse-comp-set-7: Wrong number of comparators.")
+  if (comp_set%comps(1)%op /= '<') call fail("parse-comp-set-7: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1)) call fail('parse-comp-set-7: Version does not match.')
+  if (comp_set%comps(2)%op /= '>') call fail("parse-comp-set-7: Wrong operator parsed.")
+  if (comp_set%comps(2)%version /= version_t(1, 0, 1)) call fail('parse-comp-set-7: Version does not match.')
+  if (comp_set%comps(3)%op /= '=') call fail("parse-comp-set-7: Wrong operator parsed.")
+  if (comp_set%comps(3)%version /= version_t(2)) call fail('parse-comp-set-7: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-7 should not fail.')
+
+!##############################parse_version_range#############################!
+
+  call range%parse('', e)
+  if (.not. allocated(e)) call fail('parse-version-range-1 should fail.')
+
+  call range%parse('abc', e)
+  if (.not. allocated(e)) call fail('parse-version-range-2 should fail.')
+
+  call range%parse('abc||abc', e)
+  if (.not. allocated(e)) call fail('parse-version-range-3 should fail.')
+
+  call range%parse('abc||', e)
+  if (.not. allocated(e)) call fail('parse-version-range-4 should fail.')
+
+  call range%parse('||abc', e)
+  if (.not. allocated(e)) call fail('parse-version-range-5 should fail.')
+
+  call range%parse('||', e)
+  if (.not. allocated(e)) call fail('parse-version-range-6 should fail.')
+
+  call range%parse('0.2.0', e)
+  if (size(range%comp_sets) /= 1) call fail('parse-version-range-7 has wrong number of sets.')
+  if (range%comp_sets(1)%comps(1)%op /= '') call fail('parse-version-range-7: Wrong operator.')
+  if (range%comp_sets(1)%comps(1)%version /= version_t(0, 2)) call fail('parse-version-range-7: Wrong version.')
+  if (allocated(e)) call fail('parse-version-range-7 should not fail.')
+
+  call range%parse('0.2.0 || 0.3.0', e)
+  if (size(range%comp_sets) /= 2) call fail('parse-version-range-8 has wrong number of sets.')
+  if (range%comp_sets(1)%comps(1)%op /= '') call fail('parse-version-range-8: Wrong operator.')
+  if (range%comp_sets(1)%comps(1)%version /= version_t(0, 2)) call fail('parse-version-range-8: Wrong version.')
+  if (range%comp_sets(2)%comps(1)%op /= '') call fail('parse-version-range-8: Wrong operator.')
+  if (range%comp_sets(2)%comps(1)%version /= version_t(0, 3)) call fail('parse-version-range-8: Wrong version.')
+  if (allocated(e)) call fail('parse-version-range-8 should not fail.')
+
+  call range%parse('0.2.0 || <0.3.0 || >= 0.4.0', e)
+  if (size(range%comp_sets) /= 3) call fail('parse-version-range-9 has wrong number of sets.')
+  if (range%comp_sets(1)%comps(1)%op /= '') call fail('parse-version-range-9 has parsed the wrong operator.')
+  if (range%comp_sets(1)%comps(1)%version /= version_t(0, 2)) call fail('parse-version-range-9 has parsed the wrong version.')
+  if (range%comp_sets(2)%comps(1)%op /= '<') call fail('parse-version-range-9 has parsed the wrong operator.')
+  if (range%comp_sets(2)%comps(1)%version /= version_t(0, 3)) call fail('parse-version-range-9 has parsed the wrong version.')
+  if (range%comp_sets(3)%comps(1)%op /= '>=') call fail('parse-version-range-9 has parsed the wrong operator.')
+  if (range%comp_sets(3)%comps(1)%version /= version_t(0, 4)) call fail('parse-version-range-9 has parsed the wrong version.')
+  if (allocated(e)) call fail('parse-version-range-9 should not fail.')
+
+  call range%parse('0.2.0 <0.3.0 || >= 0.4.0 !=0.4.1 =0.5.0 || 0.6.0', e)
+  if (size(range%comp_sets) /= 3) call fail('parse-version-range-10 has wrong number of sets.')
+  if (range%comp_sets(1)%comps(1)%op /= '') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(1)%comps(1)%version /= version_t(0, 2)) call fail('parse-version-range-10: Wrong version.')
+  if (range%comp_sets(1)%comps(2)%op /= '<') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(1)%comps(2)%version /= version_t(0, 3)) call fail('parse-version-range-10: Wrong version.')
+  if (range%comp_sets(2)%comps(1)%op /= '>=') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(2)%comps(1)%version /= version_t(0, 4)) call fail('parse-version-range-10: Wrong version.')
+  if (range%comp_sets(2)%comps(2)%op /= '!=') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(2)%comps(2)%version /= version_t(0, 4, 1)) call fail('parse-version-range-10: Wrong version.')
+  if (range%comp_sets(2)%comps(3)%op /= '=') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(2)%comps(3)%version /= version_t(0, 5)) call fail('parse-version-range-10: Wrong version.')
+  if (range%comp_sets(3)%comps(1)%op /= '') call fail('parse-version-range-10: Wrong operator.')
+  if (range%comp_sets(3)%comps(1)%version /= version_t(0, 6)) call fail('parse-version-range-10: Wrong version.')
+  if (allocated(e)) call fail('parse-version-range-10 should not fail.')
+
+  call range%parse('0.2.0 0.2.1 0.3.0', e)
+  if (size(range%comp_sets) /= 1) call fail('parse-version-range-11 has wrong number of sets.')
+  if (range%comp_sets(1)%comps(1)%op /= '') call fail('parse-version-range-11: Wrong operator.')
+  if (range%comp_sets(1)%comps(1)%version /= version_t(0, 2)) call fail('parse-version-range-11: Wrong version.')
+  if (range%comp_sets(1)%comps(2)%op /= '') call fail('parse-version-range-11: Wrong operator.')
+  if (range%comp_sets(1)%comps(2)%version /= version_t(0, 2, 1)) call fail('parse-version-range-11: Wrong version.')
+  if (range%comp_sets(1)%comps(3)%op /= '') call fail('parse-version-range-11: Wrong operator.')
+  if (range%comp_sets(1)%comps(3)%version /= version_t(0, 3)) call fail('parse-version-range-11: Wrong version.')
+  if (allocated(e)) call fail('parse-version-range-11 should not fail.')
 
 contains
 

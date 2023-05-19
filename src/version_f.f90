@@ -5,7 +5,8 @@ module version_f
   implicit none
   private
 
-  public :: version_t, string_t, error_t, is_version
+  public :: version_t, string_t, error_t, is_version, version_range_t, &
+            comparator_set_t, comparator_t, op_index
 
   !> Contains all version information.
   type :: version_t
@@ -24,7 +25,8 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy
+    & increment_prerelease, increment_build, is_exactly, satisfies, &
+    & satisfies_comp_set, satisfies_comp
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -74,6 +76,35 @@ module version_f
 
   interface error_t
     module procedure :: create_error_t
+  end interface
+
+  type :: version_range_t
+    type(comparator_set_t), allocatable :: comp_sets(:)
+  contains
+    generic :: parse => parse_version_range
+    procedure :: parse_version_range
+  end type
+
+  type :: comparator_set_t
+    type(comparator_t), allocatable :: comps(:)
+  contains
+    generic :: parse => parse_comp_set
+    procedure, private :: parse_comp_set
+  end type
+
+  interface comparator_set_t
+    module procedure :: create_comp_set
+  end interface
+
+  type :: comparator_t
+    character(:), allocatable :: op
+    type(version_t) :: version
+  contains
+    procedure, private :: parse_comp_and_crop_str
+  end type
+
+  interface comparator_t
+    module procedure :: create_comp
   end interface
 
 contains
@@ -727,7 +758,7 @@ contains
   !>   type(error_t), allocatable :: error
   !>
   !>   version = version_t(1, 2, 3)
-  !>   call version%try_satisfy(requirement, is_satisfied, error)
+  !>   call version%satisfies(requirement, is_satisfied, error)
   !>   if (allocated(error)) return
   !>
   !>   if (is_satisfied) then
@@ -736,20 +767,21 @@ contains
   !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
   !>   end if
   !> end
-  subroutine try_satisfy(this, string, result, error)
+  subroutine satisfies(this, string, is_satisfied, error)
     class(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
 
     !> Whether the version meets the comparison expressed in `str`.
-    logical, intent(out) :: result
+    logical, intent(out) :: is_satisfied
 
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
     character(:), allocatable :: str
-    type(version_t) :: parsed_version
+    type(version_range_t) :: version_range
+    integer :: i
 
     str = adjustl(trim(string))
 
@@ -757,61 +789,204 @@ contains
       error = error_t('Do not compare empty expressions.'); return
     end if
 
-    if (str(1:1) == '>') then
-      if (str(2:2) == '=') then
-        str = str(3:)
-        call parsed_version%parse(str, error)
-        if (allocated(error)) return
-        result = this >= parsed_version; return
-      end if
-
-      str = str(2:)
-      call parsed_version%parse(str, error)
-      if (allocated(error)) return
-      result = this > parsed_version; return
-    end if
-
-    if (str(1:1) == '<') then
-      if (str(2:2) == '=') then
-        str = str(3:)
-        call parsed_version%parse(str, error)
-        if (allocated(error)) return
-        result = this <= parsed_version; return
-      end if
-
-      str = str(2:)
-      call parsed_version%parse(str, error)
-      if (allocated(error)) return
-      result = this < parsed_version; return
-    end if
-
-    if (str(1:2) == '!=') then
-      str = str(3:)
-      call parsed_version%parse(str, error)
-      if (allocated(error)) return
-      result = this /= parsed_version; return
-    end if
-
-    if (str(1:1) == '=') str = str(2:)
-    call parsed_version%parse(str, error)
+    call version_range%parse(str, error)
     if (allocated(error)) return
-    result = this == parsed_version
+
+    do i = 1, size(version_range%comp_sets)
+      call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
+      if (is_satisfied .or. allocated(error)) return
+    end do
   end
 
-  !> Convenience function to determine whether the version meets the comparison.
-  !>
-  !> This function is a wrapper around `try_satisfy`. It returns `.false.` if
-  !> the comparison fails.
-  logical function satisfies(this, str)
+  !> Create sets of comparators that are separated by `||`.
+  subroutine parse_version_range(this, string, error)
+    !> Sets of comparators to be determined. They are separated by `||` if there
+    !> are multiple sets.
+    class(version_range_t), intent(out) :: this
+
+    !> Input string to be evaluated.
+    character(*), intent(in) :: string
+
+    !> Error handling.
+    type(error_t), allocatable, intent(out) :: error
+
+    integer :: i_sep
+    character(:), allocatable :: str
+    type(comparator_set_t) :: comp_set
+
+    str = string
+    allocate (this%comp_sets(0))
+
+    i_sep = index(str, '||')
+
+    do while (i_sep /= 0)
+      call comp_set%parse_comp_set(str(1:i_sep - 1), error)
+      if (allocated(error)) return
+
+      this%comp_sets = [this%comp_sets, comp_set]
+      str = str(i_sep + 2:)
+      i_sep = index(str, '||')
+    end do
+
+    call comp_set%parse_comp_set(str, error)
+    if (allocated(error)) return
+
+    this%comp_sets = [this%comp_sets, comp_set]
+  end
+
+  !> Create set of comparators.
+  subroutine parse_comp_set(this, string, error)
+    class(comparator_set_t), intent(out) :: this
+    character(*), intent(in) :: string
+    type(error_t), allocatable, intent(out) :: error
+
+    character(:), allocatable :: str
+    type(comparator_t) :: comp
+
+    str = string
+
+    if (len_trim(str) == 0) then
+      error = error_t('Comparator set cannot be empty.'); return
+    end if
+
+    allocate (this%comps(0))
+
+    do
+      str = trim(adjustl(str))
+      if (str(1:1) == '>') then
+        if (str(2:2) == '=') then
+          call comp%parse_comp_and_crop_str('>=', str, error)
+        else
+          call comp%parse_comp_and_crop_str('>', str, error)
+        end if
+      else if (str(1:1) == '<') then
+        if (str(2:2) == '=') then
+          call comp%parse_comp_and_crop_str('<=', str, error)
+        else
+          call comp%parse_comp_and_crop_str('<', str, error)
+        end if
+      else if (str(1:2) == '!=') then
+        call comp%parse_comp_and_crop_str('!=', str, error)
+      else if (str(1:1) == '=') then
+        call comp%parse_comp_and_crop_str('=', str, error)
+      else
+        call comp%parse_comp_and_crop_str('', str, error)
+      end if
+
+      if (allocated(error)) return
+      this%comps = [this%comps, comp]
+      if (str == '') return
+    end do
+  end
+
+  subroutine parse_comp_and_crop_str(comp, op, str, error)
+    class(comparator_t), intent(out) :: comp
+    character(*), intent(in) :: op
+    character(*), intent(inout) :: str
+    type(error_t), allocatable, intent(out) :: error
+
+    integer :: i
+
+    comp%op = op
+
+    str = trim(adjustl(str(len(op) + 1:)))
+
+    i = op_index(str)
+    if (i == 0) then
+      call comp%version%parse(str, error)
+      str = ''
+    else
+      call comp%version%parse(str(:i - 1), error)
+      str = str(i:)
+    end if
+    if (allocated(error)) return
+  end
+
+  !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
+  pure integer function op_index(str)
+    character(*), intent(in) :: str
+
+    integer :: i
+    character :: char
+
+    do i = 1, len(str)
+      char = str(i:i)
+      if (char == '>' .or. char == '<' .or. char == '!' .or. char == '=' .or. char == ' ') then
+        op_index = i; return
+      end if
+    end do
+
+    op_index = 0
+  end
+
+  pure subroutine satisfies_comp_set(version, comp_set, is_satisfied, error)
+    class(version_t), intent(in) :: version
+    type(comparator_set_t), intent(in) :: comp_set
+    logical, intent(out) :: is_satisfied
+    type(error_t), allocatable, intent(out) :: error
+
+    integer :: i
+
+    if (size(comp_set%comps) == 0) then
+      error = error_t('Comparator set cannot be empty.'); return
+    end if
+
+    do i = 1, size(comp_set%comps)
+      call version%satisfies_comp(comp_set%comps(i), is_satisfied, error)
+      if (.not. is_satisfied .or. allocated(error)) return
+    end do
+  end
+
+  !> Attempt to evaluate a comparator which consists of a comparison operator
+  !> and a version string.
+  pure subroutine satisfies_comp(this, comparator, is_satisfied, error)
     !> Instance of `version_t` to be evaluated.
     class(version_t), intent(in) :: this
 
-    !> Input string to be evaluated.
-    character(*), intent(in) :: str
+    !> Comparator to be evaluated.
+    type(comparator_t), intent(in) :: comparator
 
-    type(error_t), allocatable :: error
+    !> Whether the version meets the comparison expressed in `comparator`.
+    logical, intent(out) :: is_satisfied
 
-    call this%try_satisfy(str, satisfies, error)
-    if (allocated(error)) satisfies = .false.
+    !> Error handling.
+    type(error_t), allocatable, intent(out) :: error
+
+    if (comparator%op == '>') then
+      is_satisfied = this > comparator%version
+    else if (comparator%op == '>=') then
+      is_satisfied = this >= comparator%version
+    else if (comparator%op == '<') then
+      is_satisfied = this < comparator%version
+    else if (comparator%op == '<=') then
+      is_satisfied = this <= comparator%version
+    else if (comparator%op == '!=') then
+      is_satisfied = this /= comparator%version
+    else if (comparator%op == '=' .or. comparator%op == '') then
+      is_satisfied = this == comparator%version
+    else
+      error = error_t("Invalid operator: '"//comparator%op//"'.")
+    end if
+  end
+
+  !> Create instance of `comparator_t` using an operator (`op`) and a version.
+  pure function create_comp(op, version) result(comparator)
+    character(*), intent(in) :: op
+    type(version_t), intent(in) :: version
+    type(comparator_t) :: comparator
+
+    comparator%op = op
+    comparator%version = version
+  end
+
+  !> Create instance of `comparator_set_t` using an array of comparators.
+  pure function create_comp_set(comps) result(comp_set)
+    !> Array of comparators to create the set from.
+    type(comparator_t), intent(in) :: comps(:)
+
+    !> Instance of `comparator_set_t` created from `comps`.
+    type(comparator_set_t) :: comp_set
+
+    comp_set%comps = comps
   end
 end
