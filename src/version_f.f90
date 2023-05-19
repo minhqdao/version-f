@@ -25,7 +25,7 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly, satisfies, &
+    & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy, &
     & satisfies_comp_set, satisfies_comp
 
     generic :: create => try_create
@@ -758,7 +758,7 @@ contains
   !>   type(error_t), allocatable :: error
   !>
   !>   version = version_t(1, 2, 3)
-  !>   call version%satisfies(requirement, is_satisfied, error)
+  !>   call version%try_satisfy(requirement, is_satisfied, error)
   !>   if (allocated(error)) return
   !>
   !>   if (is_satisfied) then
@@ -767,7 +767,7 @@ contains
   !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
   !>   end if
   !> end
-  subroutine satisfies(this, string, is_satisfied, error)
+  subroutine try_satisfy(this, string, is_satisfied, error)
     class(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
@@ -796,6 +796,23 @@ contains
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
       if (is_satisfied .or. allocated(error)) return
     end do
+  end
+
+  !> Convenience function to determine whether the version meets the comparison.
+  !>
+  !> Wrapper function for `try_satisfy`, which returns `.false.` if the
+  !> comparison fails.
+  logical function satisfies(this, str)
+    !> Instance of `version_t` to be evaluated.
+    class(version_t), intent(in) :: this
+
+    !> Input string to be evaluated.
+    character(*), intent(in) :: str
+
+    type(error_t), allocatable :: error
+
+    call this%try_satisfy(str, satisfies, error)
+    if (allocated(error)) satisfies = .false.
   end
 
   !> Create sets of comparators that are separated by `||`.
