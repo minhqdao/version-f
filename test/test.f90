@@ -1109,7 +1109,7 @@ program test
   if (is_satisfied) call fail('satisfy-43 should not satisfy.')
   if (allocated(e)) call fail('satisfy-43 should not fail.')
 
-  call v1%satisfies('>=0.1.0 <2.0.0 || >0.2.0', is_satisfied, e)
+  call v1%satisfies('>=0.1.0 <2.0.0 ||  >0.2.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-44 should satisfy.')
   if (allocated(e)) call fail('satisfy-44 should not fail.')
 
@@ -1124,6 +1124,18 @@ program test
   call v1%satisfies('>0.1.0 <2.0.0 0.1.0 ||  <=0.2.0   0.0.9', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-47 should not satisfy.')
   if (allocated(e)) call fail('satisfy-47 should not fail.')
+
+  call v1%satisfies(' bx ||  <=0.2.0   0.0.9', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-48 should fail.')
+
+  call v1%satisfies(' 0.1.0 || ahc', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-49 should fail.')
+
+  call v1%satisfies(' || 0.1.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-50 should fail.')
+
+  call v1%satisfies('0.1.0 || ', is_satisfied, e)
+  if (.not. allocated(e)) call fail('satisfy-51 should fail.')
 
 !################################satisfies_comp################################!
 
