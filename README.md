@@ -45,10 +45,10 @@ version = version_t(0, 1, 0)
 ! Parse from string
 version = version_t('0.1.0')
 
-! From arguments with external error handling
+! From arguments with error handling
 call version%create(0, 1, 0, error=error)
 
-! From string with external error handling
+! From string with error handling
 call version%parse('0.1.0', error)
 
 ! From arguments with prerelease labels and build metadata
@@ -85,35 +85,7 @@ if (v2 > v3) then ! true
 if (v2 == v4) then ! true
 ```
 
-## Increment versions
-
-`Prerelease` and `build` data are cleared each time a major, minor or patch number is incremented. `prerelease` and `build` values are incremented by adding `1` to the their last identifier if it is numeric. If the last identifier isn't a number or no identifiers exist, a new identifier is added with the value of `1`. Existing `build` information is cleared each time a `prerelease` is incremented.
-
-```fortran
-type(version_t) :: version
-
-version = version_t(0, 5, 3, 'beta.1', '1')
-
-call version%increment_build() ! 0.5.3-beta.1+2
-call version%increment_prerelease() ! 0.5.3-beta.2
-call version%increment_patch() ! 0.5.4
-call version%increment_minor() ! 0.6.0
-call version%increment_major() ! 1.0.0
-```
-
-## Convert to string
-
-Versions are converted to strings using the `to_string()` method.
-
-```fortran
-type(version_t) :: version
-
-version = version_t(0, 5, 3, 'beta.1', '1-100')
-
-print *, version%to_string() ! '0.5.3-beta.1+1-100'
-```
-
-## prerelase labels
+## Prerelase labels
 
 `prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented. A `prerelease` can be [incremented](#increment-versions).
 
@@ -134,9 +106,9 @@ call v1%increment_prerelease() ! 0.5.4-1
 call v1%increment_prerelease() ! 0.5.4-2
 ```
 
-## build metadata
+## Build metadata
 
-`build` metadata can be included and will be appended after the `patch` or the `prerelease` via a `+` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. `build` data is not used for comparison and it is cleared each time a `major`, `minor`, `patch` or `prerelease` version is incremented. A `build` value can be [incremented](#increment-versions).
+`build` metadata can be included and will be appended after the `patch` or the `prerelease` via a `+` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. `build` data is not used for comparison and it is cleared every time a `major`, `minor`, `patch` or `prerelease` version is incremented. A `build` value can be [incremented](#increment-versions).
 
 ```fortran
 type(version_t) :: v1, v2
@@ -155,6 +127,43 @@ call v1%increment_build() ! 0.5.4+1
 v1 = version_t(0, 5, 3, 'alpha.1' '1')
 print *, v1%to_string() ! '0.5.3-alpha.1+1'
 print *, v1%increment_build() ! '0.5.3-alpha.1+2'
+```
+
+## Strict mode
+
+In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are forbidden.
+
+```fortran
+type(version_t) :: version
+type(error_t), allocatable :: error
+
+call version%create(1, error=error, strict_mode=.true.)
+print *, allocated(error) ! true
+
+call version%parse('1.2', error=error, strict_mode=.true.)
+print *, allocated(error) ! true
+
+print *, is_version('0.1.0-alpha.1', strict_mode=.true.) ! true
+print *, is_version('0.1.-alpha.1', strict_mode=.true.) ! false
+print *, is_version('0.1.-alpha.1') ! true
+print *, is_version('0.1-alpha.1', strict_mode=.true.) ! false
+print *, is_version('0.1-alpha.1') ! true
+```
+
+## Increment versions
+
+`Prerelease` and `build` data are cleared every time a major, minor or patch number is incremented. `prerelease` and `build` values are incremented by adding `1` to the their last identifier if it is numeric. If the last identifier isn't a number or no identifiers exist, a new identifier is added with the value of `1`. Existing `build` information is cleared each time a `prerelease` is incremented.
+
+```fortran
+type(version_t) :: version
+
+version = version_t(0, 5, 3, 'beta.1', '1')
+
+call version%increment_build() ! 0.5.3-beta.1+2
+call version%increment_prerelease() ! 0.5.3-beta.2
+call version%increment_patch() ! 0.5.4
+call version%increment_minor() ! 0.6.0
+call version%increment_major() ! 1.0.0
 ```
 
 ## is_version()
@@ -182,25 +191,16 @@ print *, v1%is_exactly(v2) ! false
 print *, v1 == v2 ! true
 ```
 
-## strict_mode
+## to_string()
 
-In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are forbidden.
+Versions are converted to strings using the `to_string()` method.
 
 ```fortran
 type(version_t) :: version
-type(error_t), allocatable :: error
 
-call version%create(1, error=error, strict_mode=.true.)
-print *, allocated(error) ! true
+version = version_t(0, 5, 3, 'beta.1', '1-100')
 
-call version%parse('1.2', error=error, strict_mode=.true.)
-print *, allocated(error) ! true
-
-print *, is_version('0.1.0-alpha.1', strict_mode=.true.) ! true
-print *, is_version('0.1.-alpha.1', strict_mode=.true.) ! false
-print *, is_version('0.1.-alpha.1') ! true
-print *, is_version('0.1-alpha.1', strict_mode=.true.) ! false
-print *, is_version('0.1-alpha.1') ! true
+print *, version%to_string() ! '0.5.3-beta.1+1-100'
 ```
 
 ## More examples
