@@ -144,8 +144,8 @@ Use the `satisfies`/`try_satisfy` procedures to verify whether a version meets a
 program main
   use version_f
 
-  logical :: is_satisfied
   type(version_t) :: version
+  logical :: is_satisfied
   type(error_t), allocatable :: error
 
   version = version_t(0, 1, 0)
