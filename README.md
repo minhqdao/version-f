@@ -58,33 +58,6 @@ call version%create(0, 1, 0, 'alpha', '1', error)
 call version%parse('0.1.0-alpha+1', error)
 ```
 
-## Compare versions
-
-Versions can be compared using the standard Fortran operators. Be aware that a version containing `prerelease` labels has lower precedence than the equivalent version without. `build` information isn't used for comparison. However, you can use the [is_exactly()](#is_exactly) function to include it.
-
-```fortran
-type(version_t) :: v1, v2, v3, v4
-
-v1 = version_t(0, 1, 0)
-v2 = version_t(1, 0, 0)
-v3 = version_t(1, 0, 0, 'alpha')
-v4 = version_t(1, 0, 0, build='1')
-
-if (v1 < v2) then ! true
-if (v1 <= v2) then ! true
-if (v1 > v2) then ! false
-if (v1 <= v2) then ! false
-if (v1 == v2) then ! false
-if (v1 /= v2) then ! true
-
-! With prerelease labels
-if (v2 == v3) then ! false
-if (v2 > v3) then ! true
-
-! With build metadata
-if (v2 == v4) then ! true
-```
-
 ## Prerelase labels
 
 `prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented. A `prerelease` can be [incremented](#increment-versions).
@@ -127,6 +100,72 @@ call v1%increment_build() ! 0.5.4+1
 v1 = version_t(0, 5, 3, 'alpha.1' '1')
 print *, v1%to_string() ! '0.5.3-alpha.1+1'
 print *, v1%increment_build() ! '0.5.3-alpha.1+2'
+```
+
+## Compare versions
+
+Versions can be compared using the standard Fortran operators. Be aware that a version containing `prerelease` labels has lower precedence than the equivalent version without. `build` information isn't used for comparison. However, you can use the [is_exactly()](#is_exactly) function to include it.
+
+```fortran
+type(version_t) :: v1, v2, v3, v4
+
+v1 = version_t(0, 1, 0)
+v2 = version_t(1, 0, 0)
+v3 = version_t(1, 0, 0, 'alpha')
+v4 = version_t(1, 0, 0, build='1')
+
+if (v1 < v2) then ! true
+if (v1 <= v2) then ! true
+if (v1 > v2) then ! false
+if (v1 <= v2) then ! false
+if (v1 == v2) then ! false
+if (v1 /= v2) then ! true
+
+! With prerelease labels
+if (v2 == v3) then ! false
+if (v2 > v3) then ! true
+
+! With build metadata
+if (v2 == v4) then ! true
+```
+
+## Version ranges
+
+Use the `satisfies`/`try_satisfy` procedures to verify whether a version meets a range. A range encompasses one or more comparator sets, with multiple sets separated by || (logical OR). Each comparator set combines one or more comparators using a space-separated arrangement (logical AND). A comparator consists of an operator and a version. The available operators include the following:
+
+- `=`: Equal to
+- `!=`: Not equal to
+- `>`: Greater than
+- `>=`: Greater than or equal to
+- `<`: Less than
+- `<=`: Less than or equal to
+
+```fortran
+program main
+  use version_f
+
+  logical :: is_satisfied
+  type(version_t) :: version
+  type(error_t), allocatable :: error
+
+  version = version_t(0, 1, 0)
+
+  print *, version%satisfies('0.1.0') ! true
+  print *, version%satisfies('=0.1.0') ! true
+  print *, version%satisfies('!=0.1.0') ! false
+  print *, version%satisfies('>0.1.0') ! false
+  print *, version%satisfies('>=0.1.0') ! true
+  print *, version%satisfies('<0.1.0') ! false
+  print *, version%satisfies('<=0.1.0') ! true
+  print *, version%satisfies('>=0.1.0 <0.2.0') ! true
+  print *, version%satisfies('>0.1.0 <0.2.0') ! false
+  print *, version%satisfies('>0.1.0 <0.2.0 || 0.1.0') ! true
+  print *, version%satisfies('0.0.8 || 0.0.9 || >0.1.0 <0.2.0') ! false
+
+  call version%try_satisfy('<=0.1.0', is_satisfied, error)
+  if (allocated(error)) call exit(1)
+  print *, is_satisfied ! true
+end
 ```
 
 ## Strict mode
