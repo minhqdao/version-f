@@ -1,4 +1,4 @@
-module boxes
+module version_f__boxes
   implicit none
   private
 
@@ -7,7 +7,7 @@ module boxes
   type box
     character(len=:), allocatable :: name
     character(len=:), allocatable :: version
-  end type box
+  end type
 
 contains
   subroutine load_boxes(boxes)
@@ -24,7 +24,7 @@ end
 
 !> A program that loads boxes and finds the box with the highest version number.
 program ex1
-  use boxes, only: box, load_boxes
+  use version_f__boxes, only: box, load_boxes
   use version_f, only: version_t
   implicit none
 
