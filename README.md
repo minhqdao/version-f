@@ -254,10 +254,10 @@ version = version_t('4.1') ! 4.1.0
 version = version_t('.5.') ! 0.5.0
 version = version_t('..1') ! 0.0.1
 ```
-There is also a full example in the [example](https://github.com/minhqdao/version-f/tree/main/example) folder. Run it with:
+There are also full examples in the [example](https://github.com/minhqdao/version-f/tree/main/example) folder. Run them with:
 
 ```bash
-fpm run --example
+fpm run --example <example_program>
 ```
 
 ## Tests

@@ -50,16 +50,16 @@ contains
 
     versions = [ &
       & version_t(0, 2, 5), &
-      & version_t(0, 2, 5, 'pre'), &
-      & version_t(0, 99, 999), &
-      & version_t(1, 2), &
-      & version_t(1, 2, 4), &
       & version_t(1, 2, 4, 'alpha'), &
-      & version_t(1, 2, 4, 'alpha', '1'), &
-      & version_t(2, prerelease='pre'), &
+      & version_t(2, 5), &
+      & version_t(1, 2), &
       & version_t(2, build='one'), &
+      & version_t(1, 2, 4), &
+      & version_t(0, 2, 5, 'pre'), &
+      & version_t(2, prerelease='pre'), &
+      & version_t(1, 2, 4, 'alpha', '1'), &
       & version_t(2, 3, 5), &
-      & version_t(2, 5) &
+      & version_t(0, 99, 999) &
     & ]
   end
 
