@@ -1521,6 +1521,23 @@ program test
   if (range%comp_sets(1)%comps(3)%version /= version_t(0, 3)) call fail('parse-version-range-11: Wrong version.')
   if (allocated(e)) call fail('parse-version-range-11 should not fail.')
 
+!###################################is_stable##################################!
+
+  v1 = version_t(0, 9, 99)
+  if (v1%is_stable()) call fail('is_stable-1 should not be stable')
+  v1 = version_t(1, 0, 0)
+  if (.not. v1%is_stable()) call fail('is_stable-2 should be stable')
+  v1 = version_t(1, 0, 0, 'alpha')
+  if (v1%is_stable()) call fail('is_stable-3 should not be stable')
+  v1 = version_t(0, 0, 1, 'alpha')
+  if (v1%is_stable()) call fail('is_stable-4 should not be stable')
+  v1 = version_t(0, 0, 1, build='alpha')
+  if (v1%is_stable()) call fail('is_stable-5 should not be stable')
+  v1 = version_t(1, 0, 1, build='alpha')
+  if (.not. v1%is_stable()) call fail('is_stable-6 should be stable')
+
+!#################################final_message################################!
+
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
 
 contains

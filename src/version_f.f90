@@ -26,7 +26,7 @@ module version_f
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
     & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy, &
-    & satisfies_comp_set, satisfies_comp
+    & satisfies_comp_set, satisfies_comp, is_stable
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -1063,5 +1063,15 @@ contains
     type(comparator_set_t) :: comp_set
 
     comp_set%comps = comps
+  end
+
+  !> Returns true if the version is stable. A version is stable if its major
+  !> version is greater than zero and the version is not a prerelease.
+  pure logical function is_stable(version)
+
+    !> Instance of `version_t` to be evaluated.
+    class(version_t), intent(in) :: version
+
+    is_stable = version%major > 0 .and. .not. allocated(version%prerelease)
   end
 end
