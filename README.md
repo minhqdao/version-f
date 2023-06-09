@@ -215,6 +215,19 @@ print *, is_version('0.1.0-alpha.1') ! true
 print *, is_version('abc') ! false
 ```
 
+## is_stable()
+
+The `is_stable()` function returns `true` if the `major` version is strictly positive and the version does not have a `prerelease` label.
+
+```fortran
+v1 = version_t(0, 9, 10)
+print *, v1%is_stable() ! false
+v1 = version_t(1, 0, 0)
+print *, v1%is_stable() ! true
+v1 = version_t(1, 0, 0, 'alpha')
+print *, v1%is_stable() ! false
+```
+
 ## is_exactly()
 
 The `is_exactly()` function has been added for convencience and isn't part of the original Semantic Versioning 2.0.0 specification. It is `true` if both versions are equal _including_ the `build` metadata.
