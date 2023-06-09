@@ -1535,13 +1535,6 @@ program test
   if (v1%is_stable()) call fail('is_stable-5 should not be stable')
   v1 = version_t(1, 0, 1, build='alpha')
   if (.not. v1%is_stable()) call fail('is_stable-6 should be stable')
-  print *, 'hi'
-  v1 = version_t(0, 1, 0)
-  print *, v1%is_stable() ! false
-  v1 = version_t(1, 0, 0)
-  print *, v1%is_stable() ! true
-  v1 = version_t(1, 0, 0, 'alpha')
-  print *, v1%is_stable() ! false
 
 !#################################final_message################################!
 
