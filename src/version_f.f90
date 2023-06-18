@@ -255,7 +255,7 @@ contains
 
   !> Increments the major version number and resets the minor and patch number
   !> as well as the prerelease and build data.
-  pure subroutine increment_major(this)
+  elemental subroutine increment_major(this)
     class(version_t), intent(inout) :: this
 
     this%major = this%major + 1
@@ -267,7 +267,7 @@ contains
   end
 
   !> Increments the minor version number and resets patch, prerelease and build.
-  pure subroutine increment_minor(this)
+  elemental subroutine increment_minor(this)
     class(version_t), intent(inout) :: this
 
     this%minor = this%minor + 1
@@ -278,7 +278,7 @@ contains
   end
 
   !> Increments the patch version number and resets prerelease and build.
-  pure subroutine increment_patch(this)
+  elemental subroutine increment_patch(this)
     class(version_t), intent(inout) :: this
 
     this%patch = this%patch + 1
@@ -288,7 +288,7 @@ contains
   end
 
   !> Increment prerelease and reset build data.
-  pure subroutine increment_prerelease(this)
+  elemental subroutine increment_prerelease(this)
     class(version_t), intent(inout) :: this
 
     call increment_identifier(this%prerelease)
@@ -296,7 +296,7 @@ contains
   end
 
   !> Increment build metadata.
-  pure subroutine increment_build(this)
+  elemental subroutine increment_build(this)
     class(version_t), intent(inout) :: this
 
     call increment_identifier(this%build)
@@ -459,7 +459,7 @@ contains
   end
 
   !> Wrapper function for `s2int`.
-  pure integer function s2i(str)
+  elemental integer function s2i(str)
     character(*), intent(in) :: str
 
     type(error_t), allocatable :: e
@@ -469,7 +469,7 @@ contains
   end
 
   !> Convert a `string_t` to an integer.
-  pure integer function string_t_2i(this)
+  elemental integer function string_t_2i(this)
     class(string_t), intent(in) :: this
 
     type(error_t), allocatable :: e
@@ -555,7 +555,7 @@ contains
   end
 
   !> Check if a string is purely numeric.
-  pure function is_numeric(str)
+  elemental function is_numeric(str)
     character(*), intent(in) :: str
     logical :: is_numeric
 
@@ -563,7 +563,7 @@ contains
   end
 
   !> Check if string_t is purely numeric.
-  pure function string_t_is_numeric(this)
+  elemental function string_t_is_numeric(this)
     class(string_t), intent(in) :: this
     logical :: string_t_is_numeric
 
@@ -571,7 +571,7 @@ contains
   end
 
   !> Check two versions for equality.
-  pure logical function equals(lhs, rhs)
+  elemental logical function equals(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -598,7 +598,7 @@ contains
   end
 
   !> Check two versions for inequality.
-  pure logical function not_equals(lhs, rhs)
+  elemental logical function not_equals(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -606,7 +606,7 @@ contains
   end
 
   !> Check if the first version is greater than the second.
-  pure logical function greater_than(lhs, rhs)
+  elemental logical function greater_than(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -631,7 +631,7 @@ contains
   end
 
   !> Check if the first version is smaller than the second.
-  pure logical function less_than(lhs, rhs)
+  elemental logical function less_than(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -639,7 +639,7 @@ contains
   end
 
   !> Check if the first version is greater than or equal to the second.
-  pure logical function greater_equals(lhs, rhs)
+  elemental logical function greater_equals(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -647,7 +647,7 @@ contains
   end
 
   !> Check if the first version is smaller than or equal to the second.
-  pure logical function less_equals(lhs, rhs)
+  elemental logical function less_equals(lhs, rhs)
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
@@ -687,7 +687,7 @@ contains
   !> True if both versions are exactly the same including the build metadata.
   !> This procedure has been added for conveniece. It is not part of the
   !> Semantic Versioning 2.0.0 specification.
-  pure logical function is_exactly(self, other)
+  elemental logical function is_exactly(self, other)
     class(version_t), intent(in) :: self
     type(version_t), intent(in) :: other
 
@@ -732,7 +732,7 @@ contains
   end
 
   !> Helper function to generate a new `string_t` instance.
-  pure function create_string_t(inp_str) result(string)
+  elemental function create_string_t(inp_str) result(string)
 
     !> Input string.
     character(*), intent(in) :: inp_str
@@ -744,7 +744,7 @@ contains
   end
 
   !> Helper function to generate a new `error_t` instance.
-  pure function create_error_t(msg) result(err)
+  elemental function create_error_t(msg) result(err)
 
     !> Error message.
     character(*), intent(in) :: msg
@@ -956,7 +956,7 @@ contains
   end
 
   !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
-  pure integer function operator_index(str)
+  elemental integer function operator_index(str)
 
     !> Input string to be evaluated.
     character(*), intent(in) :: str
@@ -1038,7 +1038,7 @@ contains
   end
 
   !> Create instance of `comparator_t` using an operator (`op`) and a version.
-  pure function create_comp(op, version) result(comparator)
+  elemental function create_comp(op, version) result(comparator)
 
     !> The operator of the comparator.
     character(*), intent(in) :: op
@@ -1067,7 +1067,7 @@ contains
 
   !> Returns true if the version is stable. A version is stable if its major
   !> version is greater than zero and the version is not a prerelease.
-  pure logical function is_stable(version)
+  elemental logical function is_stable(version)
 
     !> Instance of `version_t` to be evaluated.
     class(version_t), intent(in) :: version
