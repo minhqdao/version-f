@@ -901,6 +901,7 @@ contains
 
     do
       str = trim(adjustl(str))
+      print *, str
       if (str(1:1) == '>') then
         if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('>=', str, error)
