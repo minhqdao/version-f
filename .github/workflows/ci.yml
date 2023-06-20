@@ -31,17 +31,9 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
 
-      - name: gcc version
-        if: matrix.toolchain.compiler == 'gcc'
-        run: gfortran --version
-
-      - name: intel version
-        if: matrix.toolchain.compiler == 'intel'
-        run: ifx --version
-
-      - name: intel-classic version
-        if: matrix.toolchain.compiler == 'intel-classic'
-        run: ifort --version
+      - run: ${{ env.FC }} --version
+        env:
+          FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - run: fpm test
 
