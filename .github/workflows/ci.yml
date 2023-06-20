@@ -27,7 +27,7 @@ jobs:
 
       - uses: awvwgk/setup-fortran@v1
         id: setup-fortran
-        if: ${{ matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc' }}
+        # if: ${{ matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc' }}
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
