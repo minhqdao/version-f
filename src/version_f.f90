@@ -901,22 +901,30 @@ contains
 
     do
       str = trim(adjustl(str))
-      if (str(1:1) == '>') then
-        if (str(2:2) == '=') then
+
+      if (len(str) == 0) then
+        call comp%parse_comp_and_crop_str('', str, error)
+      else if (str(1:1) == '>') then
+        if (len(str) == 1) then
+          call comp%parse_comp_and_crop_str('>', str, error)
+        else if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('>=', str, error)
         else
           call comp%parse_comp_and_crop_str('>', str, error)
         end if
       else if (str(1:1) == '<') then
-        if (str(2:2) == '=') then
+        if (len(str) == 1) then
+          call comp%parse_comp_and_crop_str('<', str, error)
+        else if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('<=', str, error)
         else
           call comp%parse_comp_and_crop_str('<', str, error)
         end if
       else if (str(1:1) == '=') then
         call comp%parse_comp_and_crop_str('=', str, error)
+      else if (len(str) == 1) then
+        call comp%parse_comp_and_crop_str('', str, error)
       else if (str(1:2) == '!=') then
-        if (len_trim(str) == 1) call execute_command_line('echo '//str)
         call comp%parse_comp_and_crop_str('!=', str, error)
       else
         call comp%parse_comp_and_crop_str('', str, error)
