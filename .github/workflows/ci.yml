@@ -16,17 +16,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: awvwgk/setup-fortran@v1
+        if: matrix.os != 'ubuntu-latest'
         with:
           compiler: gcc
           version: 10
-
-      # - name: Set up macOS
-      #   if: matrix.os == 'macos-latest'
-      #   env:
-      #     GCC_VERSION: 10
-      #   run: |
-      #     brew install gcc@$GCC_VERSION
-      #     ln -s /usr/local/bin/gfortran-$GCC_VERSION /usr/local/bin/gfortran
 
       - name: Test fpm
         run: |
@@ -35,7 +28,7 @@ jobs:
 
   format:
     runs-on: ubuntu-latest
-    steps:  
+    steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
       - name: Check formatting
