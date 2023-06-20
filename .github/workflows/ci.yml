@@ -6,6 +6,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
@@ -25,7 +26,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: awvwgk/setup-fortran@v1
-        # if: matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc'
+        if: ${{ matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc' }}
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
