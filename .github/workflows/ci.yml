@@ -25,7 +25,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: awvwgk/setup-fortran@v1
-        if: matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc'
+        # if: matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc'
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
@@ -42,8 +42,7 @@ jobs:
         if: matrix.toolchain.compiler == 'intel-classic'
         run: ifort --version
 
-      - name: Test fpm
-        run: fpm test
+      - run: fpm test
 
   format:
     runs-on: ubuntu-latest
