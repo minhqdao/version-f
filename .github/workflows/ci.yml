@@ -34,11 +34,11 @@ jobs:
         env:
           compiler = ${{ matrix.toolchain.compiler }}
         run: |
-          if [[ $compiler == "gcc" ]]; then
+          if [[ "$compiler" == "gcc" ]]; then
             gfortran --version
-          elif [[ $compiler == "intel" ]]; then
+          elif [[ "$compiler" == "intel" ]]; then
             ifx --version
-          elif [[ $compiler == "intel-classic" ]]; then
+          elif [[ "$compiler" == "intel-classic" ]]; then
             ifort --version
           else
             echo "Unknown compiler"
