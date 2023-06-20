@@ -32,9 +32,10 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
 
-      - run: ${{ env.FC }} --version
+      - name: Print Fortran compiler version
         env:
           FC: ${{ steps.setup-fortran.outputs.fc }}
+        run: ${{ env.FC }} --version
 
       - run: fpm test
 
