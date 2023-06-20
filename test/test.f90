@@ -388,7 +388,7 @@ program test
   call v1%parse('1-irh+ife..oihie.', e)
   if (.not. allocated(e)) call fail('Trailing dot.')
 
-  call v1%parse('1-irh+.ife..oihie.', e)
+  call v1%parse('1-irh+.ife..oihie', e)
   if (.not. allocated(e)) call fail('Leading dot.')
 
 !################################## Compare ###################################!
