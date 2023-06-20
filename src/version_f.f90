@@ -543,6 +543,11 @@ contains
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
+    ! Empty identifiers are not allowed.
+    if (len_trim(str) == 0) then
+      error = error_t('Identifier must not be empty.'); return
+    end if
+
     ! Identifiers must not start with `.`.
     if (str(1:1) == '.') then
       error = error_t("Identifiers must not start with '.'"); return
