@@ -11,13 +11,9 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
           - { compiler: gcc, version: 10 }
-          - { compiler: intel-classic, version: "2021.9" }
         include:
-          - os: ubuntu-latest
-            toolchain: { compiler: intel, version: "2023.1" }
-        exclude:
-          - os: windows-latest
-            toolchain: { compiler: intel-classic, version: "2021.9" }
+          - toolchain: { os: ubuntu-latest, compiler: intel, version: "2023.1" }
+          - toolchain: { os: ubuntu-latest, compiler: intel-classic, version: "2021.9" }
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +23,6 @@ jobs:
 
       - uses: awvwgk/setup-fortran@v1
         id: setup-fortran
-        # if: ${{ matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc' }}
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
