@@ -26,6 +26,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: awvwgk/setup-fortran@v1
+        id: setup-fortran
         if: ${{ matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler != 'gcc' }}
         with:
           compiler: ${{ matrix.toolchain.compiler }}
