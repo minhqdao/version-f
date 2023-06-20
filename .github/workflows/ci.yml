@@ -25,14 +25,26 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: awvwgk/setup-fortran@v1
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-latest' && matrix.toolchain.compiler == 'gcc'
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
 
       - name: Test fpm
+        env:
+          compiler = ${{ matrix.toolchain.compiler }}
         run: |
-          gfortran --version
+          if [[ $compiler == "gcc" ]]; then
+            gfortran --version
+          elif [[ $compiler == "intel" ]]; then
+            ifx --version
+          elif [[ $compiler == "intel-classic" ]]; then
+            ifort --version
+          else
+            echo "Unknown compiler"
+            exit 1
+          fi
+
           fpm test
 
   format:
