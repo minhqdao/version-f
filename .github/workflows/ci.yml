@@ -30,22 +30,20 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
 
-      - name: Test fpm
-        env:
-          compiler = ${{ matrix.toolchain.compiler }}
-        run: |
-          if [[ "$compiler" == "gcc" ]]; then
-            gfortran --version
-          elif [[ "$compiler" == "intel" ]]; then
-            ifx --version
-          elif [[ "$compiler" == "intel-classic" ]]; then
-            ifort --version
-          else
-            echo "Unknown compiler"
-            exit 1
-          fi
+      - name: gcc version
+        if: matrix.toolchain.compiler == 'gcc'
+        run: gfortran --version
 
-          fpm test
+      - name: intel version
+        if: matrix.toolchain.compiler == 'intel'
+        run: ifx --version
+
+      - name: intel-classic version
+        if: matrix.toolchain.compiler == 'intel-classic'
+        run: ifort --version
+
+      - name: Test fpm
+        run: fpm test
 
   format:
     runs-on: ubuntu-latest
