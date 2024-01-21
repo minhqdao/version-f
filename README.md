@@ -1,12 +1,17 @@
 # version-f
 
+[![License](https://img.shields.io/github/license/minhqdao/version-f?label=License&color=teal)](https://opensource.org/licenses/Apache-2.0)
+[![Release](https://img.shields.io/github/release/minhqdao/version-f?label=Release)](https://github.com/minhqdao/version-f/releases)
+[![CI](https://github.com/minhqdao/version-f/actions/workflows/ci.yml/badge.svg)](https://github.com/minhqdao/version-f/actions/workflows/ci.yml)
+
+
 This package provides a complete Fortran implementation of
 [Semantic Versioning 2.0.0](https://semver.org). It aims to be a user-friendly
 tool for handling versions in your Fortran projects.
 
 It follows the `major`.`minor`.`patch` pattern and allows the inclusion of
 `prerelease` labels and `build` metadata. Versions can be created or parsed from
-strings, compared, incremented and converted back to strings.
+strings, compared, incremented and printed as strings.
 
 ## Installation
 
@@ -20,7 +25,7 @@ simply add this package as a dependency to your `fpm.toml` file:
 
 [dependencies.version-f]
 git = "https://github.com/minhqdao/version-f.git"
-tag = "v0.3.0"
+tag = "v0.4.0"
 ```
 
 Then import the `version_f` module into your Fortran code:
@@ -285,7 +290,7 @@ fpm test
 
 The CI will fail if the code is not formatted correctly. Please configure your
 editor to use [fprettify](https://pypi.org/project/fprettify/) and use an
-indentation width of 2 or run `fprettify -i 2 -r .` before committing. Thank you. 🙏🏽
+indentation width of 2 or run `fprettify -i 2 -r .` before committing.
 
 ## Contribute
 
