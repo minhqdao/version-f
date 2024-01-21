@@ -13,9 +13,9 @@ jobs:
           - { compiler: gcc, version: 10 }
         include:
           - os: ubuntu-latest
-            toolchain: { compiler: intel, version: "2023.1" }
+            toolchain: { compiler: intel, version: "2023.2" }
           - os: ubuntu-latest
-            toolchain: { compiler: intel-classic, version: "2021.9" }
+            toolchain: { compiler: intel-classic, version: "2021.10" }
 
     steps:
       - uses: actions/checkout@v4
