@@ -1251,6 +1251,8 @@ program test
   if (allocated(e)) call fail('try_satisfy-comp-22 should not fail.')
   if (.not. is_satisfied) call fail('try_satisfy-comp-22 should be true.')
 
+
+  
   call v1%satisfies_comp(comparator_t('=', version_t(0, 1, 0, 'abc')), is_satisfied, e)
   if (allocated(e)) call fail('try_satisfy-comp-23 should not fail.')
   if (is_satisfied) call fail('try_satisfy-comp-23 should not be true.')
