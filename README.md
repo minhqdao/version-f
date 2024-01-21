@@ -1,6 +1,6 @@
 # version-f
 
-[![License](https://img.shields.io/github/license/minhqdao/version-f?label=License)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/github/license/minhqdao/version-f?label=License&color=teal)](https://opensource.org/licenses/Apache-2.0)
 [![Release](https://img.shields.io/github/release/minhqdao/version-f?label=Release)](https://github.com/minhqdao/version-f/releases)
 [![CI](https://github.com/minhqdao/version-f/actions/workflows/ci.yml/badge.svg)](https://github.com/minhqdao/version-f/actions/workflows/ci.yml)
 
