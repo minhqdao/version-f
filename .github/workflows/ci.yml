@@ -16,6 +16,8 @@ jobs:
             toolchain: { compiler: intel-classic, version: 2021.10 }
           - os: ubuntu-latest
             toolchain: { compiler: nvidia-hpc, version: 23.11 }
+          - os: macos-13
+            toolchain: { compiler: intel-classic, version: 2021.10 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
