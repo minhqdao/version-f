@@ -24,9 +24,7 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ env.FC }} --version
-        env:
-          FC: ${{ steps.setup-fortran.outputs.fc }}
+      - run: ${{ steps.setup-fortran.outputs.fc }} --version
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,7 +43,7 @@ jobs:
         include:
           - os: macos-latest
             toolchain: { compiler: gcc, version: 13 }
-          - os: macos-latest
+          - os: macos-13
             toolchain: { compiler: intel-classic, version: 2021.10 }
 
     runs-on: ${{ matrix.os }}
