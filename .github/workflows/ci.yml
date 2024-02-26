@@ -35,6 +35,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - run: fpm test
+  
+  make:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test
 
   format:
     runs-on: ubuntu-latest
