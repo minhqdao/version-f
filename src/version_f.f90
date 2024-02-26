@@ -675,11 +675,11 @@ contains
 
     do i = 1, min(size(lhs), size(rhs))
       if (lhs(i)%str == rhs(i)%str) cycle
-      if (is_numeric(lhs(i)%str) .and. is_numeric(rhs(i)%str)) then
+      if (lhs(i)%is_numeric() .and. rhs(i)%is_numeric()) then
         is_greater = s2i(lhs(i)%str) > s2i(rhs(i)%str); return
-      else if (is_numeric(lhs(i)%str)) then
+      else if (lhs(i)%is_numeric()) then
         is_greater = .false.; return
-      else if (is_numeric(rhs(i)%str)) then
+      else if (rhs(i)%is_numeric()) then
         is_greater = .true.; return
       end if
 
