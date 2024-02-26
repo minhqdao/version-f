@@ -36,6 +36,16 @@ use version_f, only: version_t, error_t
 
 Run `fpm build` to download the dependency.
 
+### make
+
+You can also run the following command in the project's root directory to build the library:
+
+```bash
+make
+```
+
+This will create a `libversion-f.a` file in the `lib` directory. You can link it to your project using the `-L` and `-l` flags.
+
 ## Create versions
 
 Create versions using one of the following commands:

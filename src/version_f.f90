@@ -561,17 +561,17 @@ contains
     end if
 
     ! Numerical identifiers must not start with 0.
-    if (is_numeric(str) .and. str(1:1) == '0') then
+    if (is_numerical(str) .and. str(1:1) == '0') then
       error = error_t("Numerical identifiers must not start with '0'."); return
     end if
   end
 
-  !> Check if a string is purely numeric.
-  elemental function is_numeric(str)
+  !> Check if a string is purely numerical.
+  elemental function is_numerical(str)
     character(*), intent(in) :: str
-    logical :: is_numeric
+    logical :: is_numerical
 
-    is_numeric = verify(str, '0123456789') == 0
+    is_numerical = verify(str, '0123456789') == 0
   end
 
   !> Check if string_t is purely numeric.
