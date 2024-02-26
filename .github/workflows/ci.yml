@@ -19,32 +19,43 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-
       - run: ${{ env.FC }} --version
         env:
           FC: ${{ steps.setup-fortran.outputs.fc }}
-
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - run: fpm test
 
   make:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
+        toolchain:
+          - { compiler: gcc, version: 13 }
+          - { compiler: intel, version: 2023.2 }
+          - { compiler: intel-classic, version: 2021.10 }
+          - { compiler: nvidia-hpc, version: 23.9 }
+        include:
+          - os: macos-latest
+            toolchain: { compiler: gcc, version: 13 }
+          - os: macos-latest
+            toolchain: { compiler: intel-classic, version: 2021.10 }
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
+      - uses: fortran-lang/setup-fortran@v1
+        id: setup-fortran
+        with:
+          compiler: ${{ matrix.toolchain.compiler }}
+          version: ${{ matrix.toolchain.version }}
       - run: make test
 
   format:
