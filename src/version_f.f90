@@ -481,14 +481,21 @@ contains
   !> Convert an integer to a string.
   pure function int2s(num) result(str)
     integer, intent(in) :: num
-    character(:), allocatable :: str
+    character(len=:), allocatable :: str
 
-    if (num == 0) then
-      str = '0'
-    else
-      allocate (character(int(log10(real(num))) + 1) :: str)
-      write (str, '(I0)') num
-    end if
+    integer :: num_digits, tmp
+
+    tmp = num
+    num_digits = 0
+
+    do
+      num_digits = num_digits + 1
+      tmp = tmp/10
+      if (tmp == 0) exit
+    end do
+
+    allocate (character(num_digits) :: str)
+    write (str, '(I0)') num
   end
 
   !> Check for valid prerelease or build data and build identfiers from
