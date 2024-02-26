@@ -872,6 +872,11 @@ contains
     if (allocated(error)) return
 
     this%comp_sets = [this%comp_sets, comp_set]
+
+    do i_sep= 1, size(comp_set%comps)
+      print *, comp_set%comps(i_sep)%op
+      print *, comp_set%comps(i_sep)%version%to_string()
+    end do
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
