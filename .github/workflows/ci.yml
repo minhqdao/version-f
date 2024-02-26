@@ -8,17 +8,22 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
+          # - { compiler: gcc, version: 13 }
           - { compiler: gcc, version: 10 }
           - { compiler: intel, version: 2023.2 }
-          - { compiler: intel-classic, version: 2021.10 }
+          # - { compiler: intel-classic, version: 2021.10 }
         exclude:
           - os: macos-latest
             toolchain: { compiler: intel, version: 2023.2 }
-          - os: macos-latest
-            toolchain: { compiler: intel-classic, version: 2021.10 }
+          # - os: macos-latest
+          #   toolchain: { compiler: intel-classic, version: 2021.10 }
         include:
           - os: ubuntu-latest
             toolchain: { compiler: nvidia-hpc, version: 23.11 }
+          - os: ubuntu-latest
+            toolchain: { compiler: intel-classic, version: 2021.10 }
+          # - os: macos-13
+          #   toolchain: { compiler: intel-classic, version: 2021.10 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +32,7 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ steps.setup-fortran.outputs.fc }} --version
+      # - run: ${{ steps.setup-fortran.outputs.fc }} --version
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
