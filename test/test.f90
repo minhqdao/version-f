@@ -1079,6 +1079,7 @@ program test
 
   call v1%try_satisfy('  > 1.0.1 <  2.1.0 ', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-36 should not satisfy.')
+  if (allocated(e)) print *, e%msg
   if (allocated(e)) call fail('satisfy-36 should not fail.')
 
   call v1%try_satisfy('>0.0.1 <=0.1.0', is_satisfied, e)

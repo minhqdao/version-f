@@ -2,7 +2,7 @@ name: CI
 on: push
 
 jobs:
-  test:
+  fpm-test:
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
 
-  make:
+  make-test:
     strategy:
       fail-fast: false
       matrix:
