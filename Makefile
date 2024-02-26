@@ -20,7 +20,11 @@ all: $(STATIC)
 
 $(STATIC): $(SRC)
 		mkdir -p $(MOD-DIR) $(OBJ-DIR)
-		$(FC) $(FFLAGS) -c $(SRC) -J$(MOD-DIR) -o $(OBJ-DIR)/$(FILENAME).o
+		ifeq ($(FC),nvfortran)
+			$(FC) $(FFLAGS) -c $(SRC) -module $(MOD-DIR) -o $(OBJ-DIR)/$(FILENAME).o
+		else
+			$(FC) $(FFLAGS) -c $(SRC) -J$(MOD-DIR) -o $(OBJ-DIR)/$(FILENAME).o
+		endif
 		$(AR) $(ARFLAGS) $(STATIC) $(OBJ-DIR)/$(FILENAME).o
 
 test: $(TEST-SRC) $(STATIC)
