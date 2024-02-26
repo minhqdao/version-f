@@ -15,15 +15,15 @@ OBJ-DIR = $(BUILD-DIR)/obj
 TEST-DIR = $(BUILD-DIR)/test
 
 ifeq ($(FC),nvfortran)
-MOD-OUT-OPTION = -module $(MOD-DIR)
+	MOD-OUT-OPTION = -module $(MOD-DIR)
 else
-MOD-OUT-OPTION = -J$(MOD-DIR)
+	MOD-OUT-OPTION = -J$(MOD-DIR)
 endif
 
 ifeq ($(FC),nvfortran)
-MOD-IN-OPTION = -module $(MOD-DIR)
+	MOD-IN-OPTION = -module $(MOD-DIR)
 else
-MOD-IN-OPTION = -I$(MOD-DIR)
+	MOD-IN-OPTION = -I$(MOD-DIR)
 endif
 
 .PHONY: all test clean
