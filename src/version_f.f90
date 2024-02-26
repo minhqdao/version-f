@@ -566,7 +566,7 @@ contains
     end if
   end
 
-  !> Check if a string is purely numerical.
+  !> Check if the string is purely numerical.
   elemental function is_numerical(str)
     character(*), intent(in) :: str
     logical :: is_numerical
