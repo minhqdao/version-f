@@ -8,6 +8,19 @@ module version_f
   public :: version_t, string_t, error_t, is_version, version_range_t, &
             comparator_set_t, comparator_t, operator_index
 
+  type :: string_t
+    character(:), allocatable :: str
+  contains
+    generic :: num => string_t_2i
+    procedure, private :: string_t_2i
+    generic :: is_numeric => string_t_is_numeric
+    procedure, private :: string_t_is_numeric
+  end type
+
+  interface string_t
+    module procedure :: create_string_t
+  end interface
+
   !> Contains all version information.
   type :: version_t
     !> The major version number. Incremented when breaking changes are made.
@@ -57,43 +70,12 @@ module version_f
     module procedure create, parse
   end interface
 
-  type :: string_t
-    character(:), allocatable :: str
-  contains
-    generic :: num => string_t_2i
-    procedure, private :: string_t_2i
-    generic :: is_numeric => string_t_is_numeric
-    procedure, private :: string_t_is_numeric
-  end type
-
-  interface string_t
-    module procedure :: create_string_t
-  end interface
-
   type :: error_t
     character(:), allocatable :: msg
   end type
 
   interface error_t
     module procedure :: create_error_t
-  end interface
-
-  type :: version_range_t
-    type(comparator_set_t), allocatable :: comp_sets(:)
-  contains
-    generic :: parse => parse_version_range
-    procedure :: parse_version_range
-  end type
-
-  type :: comparator_set_t
-    type(comparator_t), allocatable :: comps(:)
-  contains
-    generic :: parse => parse_comp_set
-    procedure, private :: parse_comp_set
-  end type
-
-  interface comparator_set_t
-    module procedure :: create_comp_set
   end interface
 
   type :: comparator_t
@@ -106,6 +88,24 @@ module version_f
   interface comparator_t
     module procedure :: create_comp
   end interface
+
+  type :: comparator_set_t
+    type(comparator_t), allocatable :: comps(:)
+  contains
+    generic :: parse => parse_comp_set
+    procedure, private :: parse_comp_set
+  end type
+
+  interface comparator_set_t
+    module procedure :: create_comp_set
+  end interface
+
+  type :: version_range_t
+    type(comparator_set_t), allocatable :: comp_sets(:)
+  contains
+    generic :: parse => parse_version_range
+    procedure :: parse_version_range
+  end type
 
 contains
 
