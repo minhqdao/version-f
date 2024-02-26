@@ -34,6 +34,7 @@ jobs:
 
   make:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         toolchain:
@@ -56,7 +57,7 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: make test
+      - run: make test FC=${{ steps.setup-fortran.outputs.fc }}
 
   format:
     runs-on: ubuntu-latest
