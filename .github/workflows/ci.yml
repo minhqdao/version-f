@@ -32,7 +32,8 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ steps.setup-fortran.outputs.fc }} /help
+      - run: ${{ steps.setup-fortran.outputs.fc }} /QV
+      - run: ${{ steps.setup-fortran.outputs.fc }} /what
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
