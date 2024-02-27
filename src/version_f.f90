@@ -930,11 +930,13 @@ contains
 
       extend_array: block
         type(comparator_t), allocatable :: tmp(:)
+        integer :: i
         allocate (tmp(size(this%comps) + 1))
-        tmp(1:size(this%comps)) = this%comps
+        do i = 1, size(this%comps)
+          tmp(i) = this%comps(i)
+        end do
         tmp(size(tmp)) = comp
-        deallocate (this%comps)
-        this%comps = tmp
+        call move_alloc(tmp, this%comps)
       end block extend_array
 
       if (str == '') return
