@@ -927,7 +927,16 @@ contains
       end if
 
       if (allocated(error)) return
+      print *, 'after parse_comp_and_crop_str', comp%op, ' ', comp%version%to_string()
+      print *, size(this%comps)
       this%comps = [this%comps, comp]
+      print *, size(this%comps)
+      block
+        integer :: j
+        do j = 1, size(this%comps)
+          print *, this%comps(j)%op, ' ', this%comps(j)%version%to_string()
+        end do
+      end block
       if (str == '') return
       str = trim(adjustl(str))
     end do
@@ -950,10 +959,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
-print *, 'string ', str
-print *, op
     comp%op = op
-print *, comp%op
     str = trim(adjustl(str(len(op) + 1:)))
 
     i = operator_index(str)
