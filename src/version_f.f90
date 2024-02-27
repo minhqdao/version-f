@@ -94,6 +94,7 @@ module version_f
   contains
     generic :: parse => parse_comp_set
     procedure, private :: parse_comp_set
+    procedure, private :: extend_comps
   end type
 
   interface comparator_set_t
@@ -104,7 +105,8 @@ module version_f
     type(comparator_set_t), allocatable :: comp_sets(:)
   contains
     generic :: parse => parse_version_range
-    procedure :: parse_version_range
+    procedure, private :: parse_version_range
+    procedure, private :: extend_comp_sets
   end type
 
 contains
@@ -870,7 +872,7 @@ contains
       call comp_set%parse_comp_set(str(1:i_sep - 1), error)
       if (allocated(error)) return
 
-      this%comp_sets = [this%comp_sets, comp_set]
+      call this%extend_comp_sets(comp_set)
       str = str(i_sep + 2:)
       i_sep = index(str, '||')
     end do
@@ -878,7 +880,20 @@ contains
     call comp_set%parse_comp_set(str, error)
     if (allocated(error)) return
 
-    this%comp_sets = [this%comp_sets, comp_set]
+    call this%extend_comp_sets(comp_set)
+  end
+
+  !> Extend array of comparator sets within version range with another comparator.
+  subroutine extend_comp_sets(range, comp_set)
+    class(version_range_t), intent(inout) :: range
+    type(comparator_set_t), intent(in) :: comp_set
+
+    type(comparator_set_t), allocatable :: tmp(:)
+
+    allocate (tmp(size(range%comp_sets) + 1))
+    tmp(1:size(range%comp_sets)) = range%comp_sets
+    tmp(size(tmp)) = comp_set
+    call move_alloc(tmp, range%comp_sets)
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
@@ -925,23 +940,24 @@ contains
       else
         call comp%parse_comp_and_crop_str('', str, error)
       end if
-
       if (allocated(error)) return
-
-      extend_array: block
-        type(comparator_t), allocatable :: tmp(:)
-        integer :: i
-        allocate (tmp(size(this%comps) + 1))
-        do i = 1, size(this%comps)
-          tmp(i) = this%comps(i)
-        end do
-        tmp(size(tmp)) = comp
-        call move_alloc(tmp, this%comps)
-      end block extend_array
-
+      call this%extend_comps(comp)
       if (str == '') return
       str = trim(adjustl(str))
     end do
+  end
+
+  !> Extend array of comparators within comparator set with another comparator.
+  subroutine extend_comps(set, comp)
+    class(comparator_set_t), intent(inout) :: set
+    type(comparator_t), intent(in) :: comp
+
+    type(comparator_t), allocatable :: tmp(:)
+
+    allocate (tmp(size(set%comps) + 1))
+    tmp(1:size(set%comps)) = set%comps
+    tmp(size(tmp)) = comp
+    call move_alloc(tmp, set%comps)
   end
 
   !> Create a comparator from a string. A comparator consists of an operator and
@@ -961,6 +977,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
+
     comp%op = op
     str = trim(adjustl(str(len(op) + 1:)))
 
