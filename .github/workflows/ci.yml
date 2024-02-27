@@ -33,7 +33,7 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
       - name: Check Fortran compiler version
-        run: |
+        run:
           if [[ ${{ matrix.os }} == 'windows-latest' && ${{ matrix.toolchain.compiler }} == 'intel' ]]; then
             ${{ steps.setup-fortran.outputs.fc }} /QV
           else
