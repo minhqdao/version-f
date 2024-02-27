@@ -1452,11 +1452,6 @@ program test
   if (allocated(e)) call fail('parse-comp-set-7 should not fail.')
 
   call comp_set%parse('  > 1.0.1 <  2.1.0 ', e)
-  print *, size(comp_set%comps)
-  print *, comp_set%comps(1)%op
-  print *, comp_set%comps(1)%version%to_string()
-  print *, comp_set%comps(2)%op
-  print *, comp_set%comps(2)%version%to_string()
   if (size(comp_set%comps) /= 2) call fail("parse-comp-set-8: Wrong number of comparators.")
   if (comp_set%comps(1)%op /= '>') call fail("parse-comp-set-8: Wrong operator parsed.")
   if (comp_set%comps(1)%version /= version_t(1, 0, 1)) call fail('parse-comp-set-8: Version does not match.')

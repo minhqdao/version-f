@@ -889,7 +889,7 @@ contains
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
-  !> example of a set of comparators is `>=1.2.3 <2.0.0`.
+  !> example of a set of two comparators is `>=1.2.3 <2.0.0`.
   subroutine parse_comp_set(this, string, error)
 
     !> Set of comparators to be determined. They are separated by ` ` if there
@@ -912,7 +912,7 @@ contains
     end if
 
     allocate (this%comps(0))
-
+    print *, 'way before ', str
     do
       str = trim(adjustl(str))
 
@@ -943,6 +943,7 @@ contains
       else
         call comp%parse_comp_and_crop_str('', str, error)
       end if
+
       if (allocated(error)) return
       this%comps = [this%comps, comp]
       if (str == '') return
@@ -969,9 +970,13 @@ contains
 
     comp%op = op
 
+    print *, op
+    print *, str, 'before'
     str = trim(adjustl(str(len(op) + 1:)))
 
+    print *, str, 'after'
     i = operator_index(str)
+    print *, 'index ', i
     if (i == 0) then
       call comp%version%parse(str, error)
       str = ''
