@@ -950,9 +950,10 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
-
+print *, 'string ', str
+print *, op
     comp%op = op
-
+print *, comp%op
     str = trim(adjustl(str(len(op) + 1:)))
 
     i = operator_index(str)

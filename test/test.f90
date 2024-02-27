@@ -1459,6 +1459,14 @@ program test
   if (comp_set%comps(2)%version /= version_t(2, 1, 0)) call fail('parse-comp-set-8: Version does not match.')
   if (allocated(e)) call fail('parse-comp-set-8 should not fail.')
 
+  call comp_set%parse('  >= 1.0.1 <=  2.1.0 ', e)
+  if (size(comp_set%comps) /= 2) call fail("parse-comp-set-9: Wrong number of comparators.")
+  if (comp_set%comps(1)%op /= '>=') call fail("parse-comp-set-9: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1, 0, 1)) call fail('parse-comp-set-9: Version does not match.')
+  if (comp_set%comps(2)%op /= '<=') call fail("parse-comp-set-9: Wrong operator parsed.")
+  if (comp_set%comps(2)%version /= version_t(2, 1, 0)) call fail('parse-comp-set-9: Version does not match.')
+  if (allocated(e)) call fail('parse-comp-set-9 should not fail.')
+
 !##############################parse_version_range#############################!
 
   call range%parse('', e)
