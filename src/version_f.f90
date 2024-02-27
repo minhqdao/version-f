@@ -922,26 +922,36 @@ contains
     end if
 
     allocate (this%comps(0))
+
     do
-      if (str(1:1) == '>') then
-        if (str(2:2) == '=') then
+      if (len(str) == 0) then
+        call comp%parse_comp_and_crop_str('', str, error)
+      else if (str(1:1) == '>') then
+        if (len(str) == 1) then
+          call comp%parse_comp_and_crop_str('>', str, error)
+        else if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('>=', str, error)
         else
           call comp%parse_comp_and_crop_str('>', str, error)
         end if
       else if (str(1:1) == '<') then
-        if (str(2:2) == '=') then
+        if (len(str) == 1) then
+          call comp%parse_comp_and_crop_str('<', str, error)
+        else if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('<=', str, error)
         else
           call comp%parse_comp_and_crop_str('<', str, error)
         end if
       else if (str(1:1) == '=') then
         call comp%parse_comp_and_crop_str('=', str, error)
+      else if (len(str) == 1) then
+        call comp%parse_comp_and_crop_str('', str, error)
       else if (str(1:2) == '!=') then
         call comp%parse_comp_and_crop_str('!=', str, error)
       else
         call comp%parse_comp_and_crop_str('', str, error)
       end if
+
       if (allocated(error)) return
       call this%extend_with(comp)
       if (str == '') return
