@@ -94,6 +94,7 @@ module version_f
   contains
     generic :: parse => parse_comp_set
     procedure, private :: parse_comp_set
+    generic :: extend_with => extend_comps
     procedure, private :: extend_comps
   end type
 
@@ -106,6 +107,7 @@ module version_f
   contains
     generic :: parse => parse_version_range
     procedure, private :: parse_version_range
+    generic :: extend_with => extend_comp_sets
     procedure, private :: extend_comp_sets
   end type
 
@@ -872,7 +874,7 @@ contains
       call comp_set%parse_comp_set(str(1:i_sep - 1), error)
       if (allocated(error)) return
 
-      call this%extend_comp_sets(comp_set)
+      call this%extend_with(comp_set)
       str = str(i_sep + 2:)
       i_sep = index(str, '||')
     end do
@@ -880,7 +882,7 @@ contains
     call comp_set%parse_comp_set(str, error)
     if (allocated(error)) return
 
-    call this%extend_comp_sets(comp_set)
+    call this%extend_with(comp_set)
   end
 
   !> Extend array of comparator sets within version range with another comparator.
@@ -941,7 +943,7 @@ contains
         call comp%parse_comp_and_crop_str('', str, error)
       end if
       if (allocated(error)) return
-      call this%extend_comps(comp)
+      call this%extend_with(comp)
       if (str == '') return
       str = trim(adjustl(str))
     end do
