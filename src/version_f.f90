@@ -485,20 +485,20 @@ contains
   !> Convert an integer to a string.
   pure function int2s(num) result(str)
     integer, intent(in) :: num
-    character(len=:), allocatable :: str
+    character(:), allocatable :: str
 
-    integer :: num_digits, tmp
+    integer :: digits, tmp
 
     tmp = num
-    num_digits = 0
+    digits = 0
 
     do
-      num_digits = num_digits + 1
+      digits = digits + 1
       tmp = tmp/10
       if (tmp == 0) exit
     end do
 
-    allocate (character(num_digits) :: str)
+    allocate (character(digits) :: str)
     write (str, '(I0)') num
   end
 
