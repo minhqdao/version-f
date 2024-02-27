@@ -36,6 +36,22 @@ use version_f, only: version_t, error_t
 
 Run `fpm build` to download the dependency.
 
+### make
+
+To build the library using the provided `Makefile`, navigate to the project's root directory and execute the following command if you are on a Unix-like system:
+
+```bash
+make
+```
+
+This will generate the static library `libversion-f.a` in the root directory. You can compile it alongside your project or link it using the `-L` and `-l` flags.
+
+If you wish to use a compiler other than `gfortran`, simply specify it by running:
+
+```bash
+make FC=<compiler>
+```
+
 ## Create versions
 
 Create versions using one of the following commands:
@@ -284,6 +300,12 @@ Run tests with:
 
 ```bash
 fpm test
+```
+
+Alternatively, you can use the provided `Makefile` if you are on a Unix-like system:
+
+```bash
+make test
 ```
 
 ## Formatting

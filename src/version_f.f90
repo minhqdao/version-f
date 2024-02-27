@@ -8,6 +8,19 @@ module version_f
   public :: version_t, string_t, error_t, is_version, version_range_t, &
             comparator_set_t, comparator_t, operator_index
 
+  type :: string_t
+    character(:), allocatable :: str
+  contains
+    generic :: num => string_t_2i
+    procedure, private :: string_t_2i
+    generic :: is_numeric => string_t_is_numeric
+    procedure, private :: string_t_is_numeric
+  end type
+
+  interface string_t
+    module procedure :: create_string_t
+  end interface
+
   !> Contains all version information.
   type :: version_t
     !> The major version number. Incremented when breaking changes are made.
@@ -57,43 +70,12 @@ module version_f
     module procedure create, parse
   end interface
 
-  type :: string_t
-    character(:), allocatable :: str
-  contains
-    generic :: num => string_t_2i
-    procedure, private :: string_t_2i
-    generic :: is_numeric => string_t_is_numeric
-    procedure, private :: string_t_is_numeric
-  end type
-
-  interface string_t
-    module procedure :: create_string_t
-  end interface
-
   type :: error_t
     character(:), allocatable :: msg
   end type
 
   interface error_t
     module procedure :: create_error_t
-  end interface
-
-  type :: version_range_t
-    type(comparator_set_t), allocatable :: comp_sets(:)
-  contains
-    generic :: parse => parse_version_range
-    procedure :: parse_version_range
-  end type
-
-  type :: comparator_set_t
-    type(comparator_t), allocatable :: comps(:)
-  contains
-    generic :: parse => parse_comp_set
-    procedure, private :: parse_comp_set
-  end type
-
-  interface comparator_set_t
-    module procedure :: create_comp_set
   end interface
 
   type :: comparator_t
@@ -106,6 +88,28 @@ module version_f
   interface comparator_t
     module procedure :: create_comp
   end interface
+
+  type :: comparator_set_t
+    type(comparator_t), allocatable :: comps(:)
+  contains
+    generic :: parse => parse_comp_set
+    procedure, private :: parse_comp_set
+    generic :: extend_with => extend_comps
+    procedure, private :: extend_comps
+  end type
+
+  interface comparator_set_t
+    module procedure :: create_comp_set
+  end interface
+
+  type :: version_range_t
+    type(comparator_set_t), allocatable :: comp_sets(:)
+  contains
+    generic :: parse => parse_version_range
+    procedure, private :: parse_version_range
+    generic :: extend_with => extend_comp_sets
+    procedure, private :: extend_comp_sets
+  end type
 
 contains
 
@@ -483,12 +487,19 @@ contains
     integer, intent(in) :: num
     character(:), allocatable :: str
 
-    if (num == 0) then
-      str = '0'
-    else
-      allocate (character(int(log10(real(num))) + 1) :: str)
-      write (str, '(I0)') num
-    end if
+    integer :: digits, tmp
+
+    tmp = num
+    digits = 0
+
+    do
+      digits = digits + 1
+      tmp = tmp/10
+      if (tmp == 0) exit
+    end do
+
+    allocate (character(digits) :: str)
+    write (str, '(I0)') num
   end
 
   !> Check for valid prerelease or build data and build identfiers from
@@ -554,17 +565,17 @@ contains
     end if
 
     ! Numerical identifiers must not start with 0.
-    if (is_numeric(str) .and. str(1:1) == '0') then
+    if (is_numerical(str) .and. str(1:1) == '0') then
       error = error_t("Numerical identifiers must not start with '0'."); return
     end if
   end
 
-  !> Check if a string is purely numeric.
-  elemental function is_numeric(str)
+  !> Check if the string is purely numerical.
+  elemental function is_numerical(str)
     character(*), intent(in) :: str
-    logical :: is_numeric
+    logical :: is_numerical
 
-    is_numeric = verify(str, '0123456789') == 0
+    is_numerical = verify(str, '0123456789') == 0
   end
 
   !> Check if string_t is purely numeric.
@@ -668,11 +679,11 @@ contains
 
     do i = 1, min(size(lhs), size(rhs))
       if (lhs(i)%str == rhs(i)%str) cycle
-      if (is_numeric(lhs(i)%str) .and. is_numeric(rhs(i)%str)) then
+      if (lhs(i)%is_numeric() .and. rhs(i)%is_numeric()) then
         is_greater = s2i(lhs(i)%str) > s2i(rhs(i)%str); return
-      else if (is_numeric(lhs(i)%str)) then
+      else if (lhs(i)%is_numeric()) then
         is_greater = .false.; return
-      else if (is_numeric(rhs(i)%str)) then
+      else if (rhs(i)%is_numeric()) then
         is_greater = .true.; return
       end if
 
@@ -803,7 +814,7 @@ contains
     type(version_range_t) :: version_range
     integer :: i
 
-    str = adjustl(trim(string))
+    str = trim(adjustl(string))
 
     if (len(str) == 0) then
       error = error_t('Do not compare empty expressions.'); return
@@ -863,7 +874,7 @@ contains
       call comp_set%parse_comp_set(str(1:i_sep - 1), error)
       if (allocated(error)) return
 
-      this%comp_sets = [this%comp_sets, comp_set]
+      call this%extend_with(comp_set)
       str = str(i_sep + 2:)
       i_sep = index(str, '||')
     end do
@@ -871,11 +882,24 @@ contains
     call comp_set%parse_comp_set(str, error)
     if (allocated(error)) return
 
-    this%comp_sets = [this%comp_sets, comp_set]
+    call this%extend_with(comp_set)
+  end
+
+  !> Extend array of comparator sets within version range with another comparator.
+  subroutine extend_comp_sets(range, comp_set)
+    class(version_range_t), intent(inout) :: range
+    type(comparator_set_t), intent(in) :: comp_set
+
+    type(comparator_set_t), allocatable :: tmp(:)
+
+    allocate (tmp(size(range%comp_sets) + 1))
+    tmp(1:size(range%comp_sets)) = range%comp_sets
+    tmp(size(tmp)) = comp_set
+    call move_alloc(tmp, range%comp_sets)
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
-  !> example of a set of comparators is `>=1.2.3 <2.0.0`.
+  !> example of a set of two comparators is `>=1.2.3 <2.0.0`.
   subroutine parse_comp_set(this, string, error)
 
     !> Set of comparators to be determined. They are separated by ` ` if there
@@ -891,17 +915,15 @@ contains
     character(:), allocatable :: str
     type(comparator_t) :: comp
 
-    str = string
+    str = trim(adjustl(string))
 
-    if (len_trim(str) == 0) then
+    if (len(str) == 0) then
       error = error_t('Comparator set cannot be empty.'); return
     end if
 
     allocate (this%comps(0))
 
     do
-      str = trim(adjustl(str))
-
       if (len(str) == 0) then
         call comp%parse_comp_and_crop_str('', str, error)
       else if (str(1:1) == '>') then
@@ -931,9 +953,23 @@ contains
       end if
 
       if (allocated(error)) return
-      this%comps = [this%comps, comp]
+      call this%extend_with(comp)
       if (str == '') return
+      str = trim(adjustl(str))
     end do
+  end
+
+  !> Extend array of comparators within comparator set with another comparator.
+  subroutine extend_comps(set, comp)
+    class(comparator_set_t), intent(inout) :: set
+    type(comparator_t), intent(in) :: comp
+
+    type(comparator_t), allocatable :: tmp(:)
+
+    allocate (tmp(size(set%comps) + 1))
+    tmp(1:size(set%comps)) = set%comps
+    tmp(size(tmp)) = comp
+    call move_alloc(tmp, set%comps)
   end
 
   !> Create a comparator from a string. A comparator consists of an operator and
@@ -955,7 +991,6 @@ contains
     integer :: i
 
     comp%op = op
-
     str = trim(adjustl(str(len(op) + 1:)))
 
     i = operator_index(str)
