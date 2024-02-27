@@ -927,16 +927,16 @@ contains
       end if
 
       if (allocated(error)) return
-      print *, 'after parse_comp_and_crop_str', comp%op, ' ', comp%version%to_string()
-      print *, size(this%comps)
-      this%comps = [this%comps, comp]
-      print *, size(this%comps)
-      block
-        integer :: j
-        do j = 1, size(this%comps)
-          print *, this%comps(j)%op, ' ', this%comps(j)%version%to_string()
-        end do
-      end block
+
+      extend_array: block
+        type(comparator_t), allocatable :: tmp(:)
+        allocate (tmp(size(this%comps) + 1))
+        tmp(1:size(this%comps)) = this%comps
+        tmp(size(tmp)) = comp
+        deallocate (this%comps)
+        this%comps = tmp
+      end block extend_array
+
       if (str == '') return
       str = trim(adjustl(str))
     end do
