@@ -32,8 +32,13 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ steps.setup-fortran.outputs.fc }} /QV
-      - run: ${{ steps.setup-fortran.outputs.fc }} /what
+      - name: Check Fortran compiler version
+        run: |
+          if [[ ${{ matrix.os }} == 'windows-latest' && ${{ matrix.toolchain.compiler }} == 'intel' ]]; then
+            ${{ steps.setup-fortran.outputs.fc }} /QV
+          else
+            ${{ steps.setup-fortran.outputs.fc }} --version
+          fi
       - uses: fortran-lang/setup-fpm@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
