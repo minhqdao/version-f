@@ -810,7 +810,7 @@ contains
     type(version_range_t) :: version_range
     integer :: i
 
-    str = adjustl(trim(string))
+    str = trim(adjustl(string))
 
     if (len(str) == 0) then
       error = error_t('Do not compare empty expressions.'); return
@@ -820,6 +820,13 @@ contains
     if (allocated(error)) return
 
     do i = 1, size(version_range%comp_sets)
+      block
+        integer :: j
+        do j = 1, size(version_range%comp_sets(i)%comps)
+          print *, version_range%comp_sets(i)%comps(j)%op
+          print *, version_range%comp_sets(i)%comps(j)%version%to_string()
+        end do
+      end block
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
       if (is_satisfied .or. allocated(error)) return
     end do
@@ -936,7 +943,6 @@ contains
       else
         call comp%parse_comp_and_crop_str('', str, error)
       end if
-
       if (allocated(error)) return
       this%comps = [this%comps, comp]
       if (str == '') return
