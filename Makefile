@@ -6,7 +6,7 @@ ARFLAGS = rcs
 NAME = version-f
 FILENAME = version_f
 SRC = src/$(FILENAME).f90
-TEST-SRC = test/test.f90
+TEST-SRC = test/version_f_test.f90
 STATIC = lib$(NAME).a
 
 BUILD-DIR = build/Makefile
