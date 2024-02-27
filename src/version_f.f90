@@ -820,13 +820,6 @@ contains
     if (allocated(error)) return
 
     do i = 1, size(version_range%comp_sets)
-      block
-        integer :: j
-        do j = 1, size(version_range%comp_sets(i)%comps)
-          print *, version_range%comp_sets(i)%comps(j)%op
-          print *, version_range%comp_sets(i)%comps(j)%version%to_string()
-        end do
-      end block
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
       if (is_satisfied .or. allocated(error)) return
     end do
@@ -905,39 +898,28 @@ contains
     character(:), allocatable :: str
     type(comparator_t) :: comp
 
-    str = string
+    str = trim(adjustl(string))
 
-    if (len_trim(str) == 0) then
+    if (len(str) == 0) then
       error = error_t('Comparator set cannot be empty.'); return
     end if
 
     allocate (this%comps(0))
-    print *, 'way before ', str
     do
-      str = trim(adjustl(str))
-
-      if (len(str) == 0) then
-        call comp%parse_comp_and_crop_str('', str, error)
-      else if (str(1:1) == '>') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('>', str, error)
-        else if (str(2:2) == '=') then
+      if (str(1:1) == '>') then
+        if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('>=', str, error)
         else
           call comp%parse_comp_and_crop_str('>', str, error)
         end if
       else if (str(1:1) == '<') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('<', str, error)
-        else if (str(2:2) == '=') then
+        if (str(2:2) == '=') then
           call comp%parse_comp_and_crop_str('<=', str, error)
         else
           call comp%parse_comp_and_crop_str('<', str, error)
         end if
       else if (str(1:1) == '=') then
         call comp%parse_comp_and_crop_str('=', str, error)
-      else if (len(str) == 1) then
-        call comp%parse_comp_and_crop_str('', str, error)
       else if (str(1:2) == '!=') then
         call comp%parse_comp_and_crop_str('!=', str, error)
       else
@@ -947,6 +929,7 @@ contains
       if (allocated(error)) return
       this%comps = [this%comps, comp]
       if (str == '') return
+      str = trim(adjustl(str))
     end do
   end
 
@@ -970,13 +953,9 @@ contains
 
     comp%op = op
 
-    print *, op
-    print *, str, 'before'
     str = trim(adjustl(str(len(op) + 1:)))
 
-    print *, str, 'after'
     i = operator_index(str)
-    print *, 'index ', i
     if (i == 0) then
       call comp%version%parse(str, error)
       str = ''
