@@ -12,15 +12,18 @@ STATIC = lib$(NAME).a
 
 SRCDIR = src
 TESTDIR = test
+EXMPLDIR = example
 BUILDDIR = build/Makefile
 MODDIR = $(BUILDDIR)/mod
 OBJDIR = $(BUILDDIR)/obj
 EXEDIR = $(BUILDDIR)/exe
 
-SRCS := $(wildcard $(SRCDIR)/*.f90)
-TESTSRCS := $(wildcard $(TESTDIR)/*.f90)
-OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
-TESTOBJS := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%.out,$(TESTSRCS))
+SRCS = $(wildcard $(SRCDIR)/*.f90)
+TESTSRCS = $(wildcard $(TESTDIR)/*.f90)
+EXMPLSRCS = $(wildcard $(EXMPLDIR)/*.f90)
+OBJS = $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
+TESTEXES = $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%.out,$(TESTSRCS))
+EXMPLEXES = $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%.out,$(EXMPLSRCS))
 
 ifeq ($(FC),nvfortran)
 	MODOUT = -module $(MODDIR)
@@ -47,8 +50,12 @@ $(EXEDIR)/%.out: $(TESTDIR)/%.f90 $(STATIC)
 		mkdir -p $(EXEDIR)
 		$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
 
-test: $(TESTOBJS)
-		$(TESTOBJS)
+$(EXEDIR)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
+		mkdir -p $(EXEDIR)
+		$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+
+test: $(TESTEXES) $(EXMPLEXES)
+		@for f in $(TESTEXES) $(EXMPLEXES); do $$f; done
 
 clean:
 		rm -rf $(BUILDDIR)
