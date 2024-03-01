@@ -1,3 +1,6 @@
+.POSIX:
+.SUFFIXES:
+
 FC = gfortran
 FFLAGS = -O2
 AR = ar
