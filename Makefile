@@ -18,15 +18,15 @@ OBJDIR = $(BUILDDIR)/obj
 TESTDIR = $(BUILDDIR)/test
 
 ifeq ($(FC),nvfortran)
-	MOD-OUTPUT = -module $(MODDIR)
+	MODOUT = -module $(MODDIR)
 else
-	MOD-OUTPUT = -J$(MODDIR)
+	MODOUT = -J$(MODDIR)
 endif
 
 ifeq ($(FC),nvfortran)
-	MOD-INPUT = -module $(MODDIR)
+	MODIN = -module $(MODDIR)
 else
-	MOD-INPUT = -I$(MODDIR)
+	MODIN = -I$(MODDIR)
 endif
 
 .PHONY: all test clean
@@ -35,12 +35,12 @@ all: $(STATIC)
 
 $(STATIC): $(SRC)
 		mkdir -p $(MODDIR) $(OBJDIR)
-		$(FC) $(FFLAGS) -c $(SRC) $(MODOUTPUT) -o $(OBJDIR)/$(FILENAME).o
+		$(FC) $(FFLAGS) -c $(SRC) $(MODOUT) -o $(OBJDIR)/$(FILENAME).o
 		$(AR) $(ARFLAGS) $(STATIC) $(OBJDIR)/$(FILENAME).o
 
 test: $(TESTSRC) $(STATIC)
 		mkdir -p $(TESTDIR)
-		$(FC) $(FFLAGS) $(TESTSRC) $(MODINPUT) -o $(TESTDIR)/test.out $(STATIC)
+		$(FC) $(FFLAGS) $(TESTSRC) $(MODIN) -o $(TESTDIR)/test.out $(STATIC)
 		$(TESTDIR)/test.out
 
 clean:
