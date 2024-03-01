@@ -1,5 +1,6 @@
 .POSIX:
 .SUFFIXES:
+.PHONY: all test clean
 
 FC = gfortran
 FFLAGS = -O2
@@ -7,15 +8,19 @@ AR = ar
 ARFLAGS = rcs
 
 NAME = version-f
-FILENAME = version_f
-SRC = src/$(FILENAME).f90
-TESTSRC = test/version_f_test.f90
 STATIC = lib$(NAME).a
 
+SRCDIR = src
+TESTDIR = test
 BUILDDIR = build/Makefile
 MODDIR = $(BUILDDIR)/mod
 OBJDIR = $(BUILDDIR)/obj
-TESTDIR = $(BUILDDIR)/test
+EXEDIR = $(BUILDDIR)/exe
+
+SRCS := $(wildcard $(SRCDIR)/*.f90)
+TESTSRCS := $(wildcard $(TESTDIR)/*.f90)
+OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
+TESTOBJS := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%.out,$(TESTSRCS))
 
 ifeq ($(FC),nvfortran)
 	MODOUT = -module $(MODDIR)
@@ -29,19 +34,21 @@ else
 	MODIN = -I$(MODDIR)
 endif
 
-.PHONY: all test clean
-
 all: $(STATIC)
 
-$(STATIC): $(SRC)
+$(OBJDIR)/%.o: $(SRCDIR)/%.f90
 		mkdir -p $(MODDIR) $(OBJDIR)
-		$(FC) $(FFLAGS) -c $(SRC) $(MODOUT) -o $(OBJDIR)/$(FILENAME).o
-		$(AR) $(ARFLAGS) $(STATIC) $(OBJDIR)/$(FILENAME).o
+		$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
 
-test: $(TESTSRC) $(STATIC)
-		mkdir -p $(TESTDIR)
-		$(FC) $(FFLAGS) $(TESTSRC) $(MODIN) -o $(TESTDIR)/test.out $(STATIC)
-		$(TESTDIR)/test.out
+$(STATIC): $(OBJS)
+		$(AR) $(ARFLAGS) $@ $(OBJS)
+
+$(EXEDIR)/%.out: $(TESTDIR)/%.f90 $(STATIC)
+		mkdir -p $(EXEDIR)
+		$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+
+test: $(TESTOBJS)
+		$(TESTOBJS)
 
 clean:
 		rm -rf $(BUILDDIR)
