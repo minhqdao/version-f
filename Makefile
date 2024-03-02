@@ -1,45 +1,62 @@
+.POSIX:
+.SUFFIXES:
+.PHONY: all test clean
+
 FC = gfortran
 FFLAGS = -O2
 AR = ar
 ARFLAGS = rcs
 
 NAME = version-f
-FILENAME = version_f
-SRC = src/$(FILENAME).f90
-TEST-SRC = test/version_f_test.f90
 STATIC = lib$(NAME).a
 
-BUILD-DIR = build/Makefile
-MOD-DIR = $(BUILD-DIR)/mod
-OBJ-DIR = $(BUILD-DIR)/obj
-TEST-DIR = $(BUILD-DIR)/test
+SRCDIR = src
+TESTDIR = test
+EXMPLDIR = example
+BUILDDIR = build/Makefile
+MODDIR = $(BUILDDIR)/mod
+OBJDIR = $(BUILDDIR)/obj
+EXEDIR = $(BUILDDIR)/exe
+
+SRCS = $(wildcard $(SRCDIR)/*.f90)
+TESTSRCS = $(wildcard $(TESTDIR)/*.f90)
+EXMPLSRCS = $(wildcard $(EXMPLDIR)/*.f90)
+OBJS = $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
+TESTEXES = $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%.out,$(TESTSRCS))
+EXMPLEXES = $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%.out,$(EXMPLSRCS))
 
 ifeq ($(FC),nvfortran)
-	MOD-OUTPUT = -module $(MOD-DIR)
+	MODOUT = -module $(MODDIR)
 else
-	MOD-OUTPUT = -J$(MOD-DIR)
+	MODOUT = -J$(MODDIR)
 endif
 
 ifeq ($(FC),nvfortran)
-	MOD-INPUT = -module $(MOD-DIR)
+	MODIN = -module $(MODDIR)
 else
-	MOD-INPUT = -I$(MOD-DIR)
+	MODIN = -I$(MODDIR)
 endif
-
-.PHONY: all test clean
 
 all: $(STATIC)
 
-$(STATIC): $(SRC)
-		mkdir -p $(MOD-DIR) $(OBJ-DIR)
-		$(FC) $(FFLAGS) -c $(SRC) $(MOD-OUTPUT) -o $(OBJ-DIR)/$(FILENAME).o
-		$(AR) $(ARFLAGS) $(STATIC) $(OBJ-DIR)/$(FILENAME).o
+$(OBJDIR)/%.o: $(SRCDIR)/%.f90
+		mkdir -p $(MODDIR) $(OBJDIR)
+		$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
 
-test: $(TEST-SRC) $(STATIC)
-		mkdir -p $(TEST-DIR)
-		$(FC) $(FFLAGS) $(TEST-SRC) $(MOD-INPUT) -o $(TEST-DIR)/test.out $(STATIC)
-		$(TEST-DIR)/test.out
+$(STATIC): $(OBJS)
+		$(AR) $(ARFLAGS) $@ $(OBJS)
+
+$(EXEDIR)/%.out: $(TESTDIR)/%.f90 $(STATIC)
+		mkdir -p $(EXEDIR)
+		$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+
+$(EXEDIR)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
+		mkdir -p $(EXEDIR)
+		$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+
+test: $(TESTEXES) $(EXMPLEXES)
+		@for f in $(TESTEXES) $(EXMPLEXES); do $$f; done
 
 clean:
-		rm -rf $(BUILD-DIR)
+		rm -rf $(BUILDDIR)
 		rm -f $(STATIC)
