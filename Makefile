@@ -25,16 +25,16 @@ OBJDIR := $(BUILDDIR)/obj
 EXEDIRSTATIC := $(BUILDDIR)/exe/static
 EXEDIRSHARED := $(BUILDDIR)/exe/shared
 
-ifeq ($(FC),nvfortran)
-	MODOUT := -module $(MODDIR)
-else
+ifeq ($(FC),gfortran)
 	MODOUT := -J$(MODDIR)
+else
+	MODOUT := -module $(MODDIR)
 endif
 
-ifeq ($(FC),nvfortran)
-	MODIN := -module $(MODDIR)
-else
+ifeq ($(FC),gfortran)
 	MODIN := -I$(MODDIR)
+else
+	MODIN := -module $(MODDIR)
 endif
 
 SRCS := $(wildcard $(SRCDIR)/*.f90)
