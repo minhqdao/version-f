@@ -3,3 +3,5 @@ build
 
 # Locally generated libraries
 *.a
+*.so
+*.dylib
