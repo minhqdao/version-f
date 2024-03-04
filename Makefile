@@ -63,19 +63,19 @@ $(SHARED): $(SRCS)
 
 $(EXEDIRSTATIC)/%.out: $(TESTDIR)/%.f90 $(STATIC)
 	mkdir -p $(EXEDIRSTATIC)
-	$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(STATIC)
 
 $(EXEDIRSTATIC)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
 	mkdir -p $(EXEDIRSTATIC)
-	$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(STATIC)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(STATIC)
 
 $(EXEDIRSHARED)/%.out: $(TESTDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(SHARED)
+	$(FC) $(FFLAGS) -L. $(MODIN) -o $@ $< $(SHARED)
 
 $(EXEDIRSHARED)/%.out: $(EXMPLDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $< $(MODIN) -o $@ $(SHARED)
+	$(FC) $(FFLAGS) -L. $(MODIN) -o $@ $< $(SHARED)
 
 test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
 	@for f in $^; do $$f; done
