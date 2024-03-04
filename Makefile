@@ -12,6 +12,7 @@ STATIC := lib$(NAME).a
 
 ifeq ($(shell uname), Linux)
     SHARED := lib$(NAME).so
+	LDFLAGS := -rpath=.
 else ifeq ($(shell uname), Darwin)
     SHARED := lib$(NAME).dylib
 endif
@@ -71,11 +72,11 @@ $(EXEDIRSTATIC)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
 
 $(EXEDIRSHARED)/%.out: $(TESTDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED) -Wl,-rpath=.
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED) $(LDFLAGS)
 
 $(EXEDIRSHARED)/%.out: $(EXMPLDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED) -Wl,-rpath=.
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED)	$(LDFLAGS)
 
 test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
 	@for f in $^; do $$f; done
