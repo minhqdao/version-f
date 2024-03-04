@@ -12,7 +12,7 @@ STATIC := lib$(NAME).a
 
 ifeq ($(shell uname), Linux)
     SHARED := lib$(NAME).so
-	LDFLAGS := -rpath=.
+	LDFLAGS := -Wl,-rpath=.
 else ifeq ($(shell uname), Darwin)
     SHARED := lib$(NAME).dylib
 endif
