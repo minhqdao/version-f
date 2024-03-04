@@ -71,11 +71,11 @@ $(EXEDIRSTATIC)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
 
 $(EXEDIRSHARED)/%.out: $(TESTDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) -L. $(MODIN) -o $@ $< $(SHARED)
+	$(FC) $(FFLAGS) -L../../../.. $(MODIN) -o $@ $< $(SHARED)
 
 $(EXEDIRSHARED)/%.out: $(EXMPLDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) -L. $(MODIN) -o $@ $< $(SHARED)
+	$(FC) $(FFLAGS) -L../../../.. $(MODIN) -o $@ $< $(SHARED)
 
 test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
 	@for f in $^; do $$f; done
