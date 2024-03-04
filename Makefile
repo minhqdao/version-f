@@ -27,15 +27,11 @@ EXEDIRSTATIC := $(BUILDDIR)/exe/static
 EXEDIRSHARED := $(BUILDDIR)/exe/shared
 
 ifeq ($(FC),gfortran)
+	MODIN := -I$(MODDIR)
 	MODOUT := -J$(MODDIR)
 else
-	MODOUT := -module $(MODDIR)
-endif
-
-ifeq ($(FC),gfortran)
-	MODIN := -I$(MODDIR)
-else
 	MODIN := -module $(MODDIR)
+	MODOUT := MODIN
 endif
 
 SRCS := $(wildcard $(SRCDIR)/*.f90)
