@@ -36,7 +36,7 @@ ifeq ($(FC),gfortran)
 	MODOUT := -J$(MODDIR)
 else
 	MODIN := -module $(MODDIR)
-	MODOUT := MODIN
+	MODOUT := $(MODIN)
 endif
 
 all: $(STATIC) $(SHARED)
