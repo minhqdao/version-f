@@ -25,6 +25,12 @@ MODDIR := $(BUILDDIR)/mod
 OBJDIR := $(BUILDDIR)/obj
 EXEDIR := $(BUILDDIR)/exe
 
+SRCS := $(wildcard $(SRCDIR)/*.f90)
+OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
+EXESRCS := $(foreach dir,$(TESTDIR) $(EXMPLDIR),$(wildcard $(dir)/*.f90))
+EXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXESRCS)))
+EXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXESRCS)))
+
 ifeq ($(FC),gfortran)
 	MODIN := -I$(MODDIR)
 	MODOUT := -J$(MODDIR)
@@ -32,12 +38,6 @@ else
 	MODIN := -module $(MODDIR)
 	MODOUT := MODIN
 endif
-
-SRCS := $(wildcard $(SRCDIR)/*.f90)
-OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
-EXESRCS := $(foreach dir,$(TESTDIR) $(EXMPLDIR),$(wildcard $(dir)/*.f90))
-EXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXESRCS)))
-EXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXESRCS)))
 
 all: $(STATIC) $(SHARED)
 static: $(STATIC)
