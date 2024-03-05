@@ -47,7 +47,7 @@ all: $(STATIC) $(SHARED)
 static: $(STATIC)
 shared: $(SHARED)
 
-$(OBJS): $(SRCS)
+$(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	mkdir -p $(MODDIR) $(OBJDIR)
 	$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
 
