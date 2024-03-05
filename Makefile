@@ -23,8 +23,7 @@ EXMPLDIR := example
 BUILDDIR := build/Makefile
 MODDIR := $(BUILDDIR)/mod
 OBJDIR := $(BUILDDIR)/obj
-EXEDIRSTATIC := $(BUILDDIR)/exe/static
-EXEDIRSHARED := $(BUILDDIR)/exe/shared
+EXEDIR := $(BUILDDIR)/exe
 
 ifeq ($(FC),gfortran)
 	MODIN := -I$(MODDIR)
@@ -38,10 +37,10 @@ SRCS := $(wildcard $(SRCDIR)/*.f90)
 TESTSRCS := $(wildcard $(TESTDIR)/*.f90)
 EXMPLSRCS := $(wildcard $(EXMPLDIR)/*.f90)
 OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
-TESTEXESSTATIC := $(patsubst $(TESTDIR)/%.f90,$(EXEDIRSTATIC)/%.out,$(TESTSRCS))
-TESTEXESSHARED := $(patsubst $(TESTDIR)/%.f90,$(EXEDIRSHARED)/%.out,$(TESTSRCS))
-EXMPLEXESSTATIC := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIRSTATIC)/%.out,$(EXMPLSRCS))
-EXMPLEXESSHARED := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIRSHARED)/%.out,$(EXMPLSRCS))
+TESTEXESSTATIC := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%_static.out,$(TESTSRCS))
+TESTEXESSHARED := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%_shared.out,$(TESTSRCS))
+EXMPLEXESSTATIC := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%_static.out,$(EXMPLSRCS))
+EXMPLEXESSHARED := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%_shared.out,$(EXMPLSRCS))
 
 all: $(STATIC) $(SHARED)
 static: $(STATIC)
@@ -58,20 +57,20 @@ $(SHARED): $(SRCS)
 	mkdir -p $(MODDIR)
 	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $<
 
-$(EXEDIRSTATIC)/%.out: $(TESTDIR)/%.f90 $(STATIC)
-	mkdir -p $(EXEDIRSTATIC)
+$(EXEDIR)/%_static.out: $(TESTDIR)/%.f90 $(STATIC)
+	mkdir -p $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
-$(EXEDIRSTATIC)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
-	mkdir -p $(EXEDIRSTATIC)
+$(EXEDIR)/%_static.out: $(EXMPLDIR)/%.f90 $(STATIC)
+	mkdir -p $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
-$(EXEDIRSHARED)/%.out: $(TESTDIR)/%.f90 $(SHARED)
-	mkdir -p $(EXEDIRSHARED)
+$(EXEDIR)/%_shared.out: $(TESTDIR)/%.f90 $(SHARED)
+	mkdir -p $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
-$(EXEDIRSHARED)/%.out: $(EXMPLDIR)/%.f90 $(SHARED)
-	mkdir -p $(EXEDIRSHARED)
+$(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED)
+	mkdir -p $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
