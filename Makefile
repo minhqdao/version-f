@@ -34,13 +34,10 @@ else
 endif
 
 SRCS := $(wildcard $(SRCDIR)/*.f90)
-TESTSRCS := $(wildcard $(TESTDIR)/*.f90)
-EXMPLSRCS := $(wildcard $(EXMPLDIR)/*.f90)
 OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
-TESTEXESSTATIC := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%_static.out,$(TESTSRCS))
-TESTEXESSHARED := $(patsubst $(TESTDIR)/%.f90,$(EXEDIR)/%_shared.out,$(TESTSRCS))
-EXMPLEXESSTATIC := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%_static.out,$(EXMPLSRCS))
-EXMPLEXESSHARED := $(patsubst $(EXMPLDIR)/%.f90,$(EXEDIR)/%_shared.out,$(EXMPLSRCS))
+EXESRCS := $(foreach dir,$(TESTDIR) $(EXMPLDIR),$(wildcard $(dir)/*.f90))
+EXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXESRCS)))
+EXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXESRCS)))
 
 all: $(STATIC) $(SHARED)
 static: $(STATIC)
@@ -57,23 +54,22 @@ $(SHARED): $(SRCS)
 	mkdir -p $(MODDIR)
 	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $<
 
-$(EXEDIR)/%_static.out: $(TESTDIR)/%.f90 $(STATIC)
+$(EXEDIR):
 	mkdir -p $(EXEDIR)
+
+$(EXEDIR)/%_static.out: $(TESTDIR)/%.f90 $(STATIC) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
-$(EXEDIR)/%_static.out: $(EXMPLDIR)/%.f90 $(STATIC)
-	mkdir -p $(EXEDIR)
+$(EXEDIR)/%_static.out: $(EXMPLDIR)/%.f90 $(STATIC) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
-$(EXEDIR)/%_shared.out: $(TESTDIR)/%.f90 $(SHARED)
-	mkdir -p $(EXEDIR)
+$(EXEDIR)/%_shared.out: $(TESTDIR)/%.f90 $(SHARED) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
-$(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED)
-	mkdir -p $(EXEDIR)
+$(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
-test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
+test: $(EXESSTATIC) $(EXESSHARED)
 	@for f in $^; do $$f; done
 
 clean:
