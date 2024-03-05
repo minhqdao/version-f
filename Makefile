@@ -52,7 +52,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
 
 $(STATIC): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(AR) $(ARFLAGS) $@ $<
 
 $(SHARED): $(SRCS)
 	mkdir -p $(MODDIR)
@@ -60,19 +60,19 @@ $(SHARED): $(SRCS)
 
 $(EXEDIRSTATIC)/%.out: $(TESTDIR)/%.f90 $(STATIC)
 	mkdir -p $(EXEDIRSTATIC)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(STATIC)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
 $(EXEDIRSTATIC)/%.out: $(EXMPLDIR)/%.f90 $(STATIC)
 	mkdir -p $(EXEDIRSTATIC)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(STATIC)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $^
 
 $(EXEDIRSHARED)/%.out: $(TESTDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED) $(LDFLAGS)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 $(EXEDIRSHARED)/%.out: $(EXMPLDIR)/%.f90 $(SHARED)
 	mkdir -p $(EXEDIRSHARED)
-	$(FC) $(FFLAGS) $(MODIN) -o $@ $< $(SHARED)	$(LDFLAGS)
+	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 test: $(TESTEXESSTATIC) $(TESTEXESSHARED) $(EXMPLEXESSTATIC) $(EXMPLEXESSHARED)
 	@for f in $^; do $$f; done
