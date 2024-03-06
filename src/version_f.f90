@@ -5,7 +5,7 @@ module version_f
   implicit none
   private
 
-  public :: version_t, string_t, error_t, is_version, version_range_t, &
+  public :: version_t, string_t, error_t, version_range_t, &
             comparator_set_t, comparator_t, operator_index
 
   type :: string_t
@@ -37,9 +37,7 @@ module version_f
 
   contains
 
-    procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy, &
-    & satisfies_comp_set, satisfies_comp, is_stable
+    procedure :: to_string, try_satisfy, satisfies_comp_set, satisfies_comp
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -250,73 +248,6 @@ contains
         str = str//this%build(i)%str
         if (i < size(this%build)) str = str//'.'
       end do
-    end if
-  end
-
-  !> Increments the major version number and resets the minor and patch number
-  !> as well as the prerelease and build data.
-  elemental subroutine increment_major(this)
-    class(version_t), intent(inout) :: this
-
-    this%major = this%major + 1
-    this%minor = 0
-    this%patch = 0
-
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
-  end
-
-  !> Increments the minor version number and resets patch, prerelease and build.
-  elemental subroutine increment_minor(this)
-    class(version_t), intent(inout) :: this
-
-    this%minor = this%minor + 1
-    this%patch = 0
-
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
-  end
-
-  !> Increments the patch version number and resets prerelease and build.
-  elemental subroutine increment_patch(this)
-    class(version_t), intent(inout) :: this
-
-    this%patch = this%patch + 1
-
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
-  end
-
-  !> Increment prerelease and reset build data.
-  elemental subroutine increment_prerelease(this)
-    class(version_t), intent(inout) :: this
-
-    call increment_identifier(this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
-  end
-
-  !> Increment build metadata.
-  elemental subroutine increment_build(this)
-    class(version_t), intent(inout) :: this
-
-    call increment_identifier(this%build)
-  end
-
-  !> Increment prerelease or build identifiers. If the last identifier is
-  !> numeric, increment it by 1. Otherwise add a new identifier with the value
-  !> 1.
-  pure subroutine increment_identifier(ids)
-    type(string_t), allocatable, intent(inout) :: ids(:)
-
-    if (allocated(ids)) then
-      if (ids(size(ids))%is_numeric()) then
-        ids = [ids(1:size(ids) - 1), string_t(trim(int2s(ids(size(ids))%num() + 1)))]
-      else
-        ids = [ids, string_t('1')]
-      end if
-    else
-      allocate (ids(1))
-      ids(1)%str = '1'
     end if
   end
 
@@ -696,53 +627,6 @@ contains
     is_greater = size(lhs) > size(rhs)
   end
 
-  !> True if both versions are exactly the same including the build metadata.
-  !> This procedure has been added for conveniece. It is not part of the
-  !> Semantic Versioning 2.0.0 specification.
-  elemental logical function is_exactly(self, other)
-    class(version_t), intent(in) :: self
-    type(version_t), intent(in) :: other
-
-    integer :: i
-
-    is_exactly = self == other; 
-    if (.not. is_exactly) return
-
-    if (allocated(self%build) .and. allocated(other%build)) then
-      if (size(self%build) /= size(other%build)) then
-        is_exactly = .false.; return
-      end if
-
-      do i = 1, size(self%build)
-        if (self%build(i)%str /= other%build(i)%str) then
-          is_exactly = .false.; return
-        end if
-      end do
-    else if (allocated(self%build) .or. allocated(other%build)) then
-      is_exactly = .false.; return
-    end if
-  end
-
-  !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
-  !> wish to receive detailed error messages. In strict mode, all major, minor
-  !> and patch versions must be provided. Implicit zeros are forbidden in strict
-  !> mode.
-  logical function is_version(str, strict_mode)
-
-    !> Input string.
-    character(*), intent(in) :: str
-
-    !> If true, all major, minor and patch versions must be provided. Implicit
-    !> zeros are forbidden in strict mode.
-    logical, optional, intent(in) :: strict_mode
-
-    type(version_t) :: version
-    type(error_t), allocatable :: error
-
-    call version%parse(str, error, strict_mode)
-    is_version = .not. allocated(error)
-  end
-
   !> Helper function to generate a new `string_t` instance.
   elemental function create_string_t(inp_str) result(string)
 
@@ -823,24 +707,6 @@ contains
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
       if (is_satisfied .or. allocated(error)) return
     end do
-  end
-
-  !> Convenience function to determine whether the version meets the comparison.
-  !>
-  !> Wrapper function for `try_satisfy`, which returns `.false.` if the
-  !> comparison fails.
-  logical function satisfies(this, str)
-
-    !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: this
-
-    !> Input string to be evaluated.
-    character(*), intent(in) :: str
-
-    type(error_t), allocatable :: error
-
-    call this%try_satisfy(str, satisfies, error)
-    if (allocated(error)) satisfies = .false.
   end
 
   !> Create sets of comparators that are separated by `||`. An example of a
@@ -1083,15 +949,5 @@ contains
     type(comparator_set_t) :: comp_set
 
     comp_set%comps = comps
-  end
-
-  !> Returns true if the version is stable. A version is stable if its major
-  !> version is greater than zero and the version is not a prerelease.
-  elemental logical function is_stable(version)
-
-    !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: version
-
-    is_stable = version%major > 0 .and. .not. allocated(version%prerelease)
   end
 end

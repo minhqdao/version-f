@@ -3,11 +3,8 @@ program test
 
   implicit none
 
-  type(version_t) :: v1, v2
+  type(version_t) :: v1
   logical :: is_satisfied
-  type(comparator_t), allocatable :: comps(:)
-  type(comparator_set_t) :: comp_set
-  type(version_range_t) :: range
   type(error_t), allocatable :: e
 
 !##################################try_satisfy#################################!
@@ -242,3 +239,14 @@ program test
   call v1%try_satisfy('0.1.0+abc', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-58 should satisfy.')
   if (allocated(e)) call fail('satisfy-58 should not fail.')
+
+  print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
+
+contains
+
+  subroutine fail(msg)
+    character(*), intent(in) :: msg
+    print *, achar(27)//'[31m'//'Test failed: '//msg//achar(27)//'[0m'
+    stop 1
+  end
+end program
