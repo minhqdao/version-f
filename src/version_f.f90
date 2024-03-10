@@ -67,7 +67,6 @@ module version_f
   type :: comparator_set_t
     type(comparator_t), allocatable :: comps(:)
   contains
-    generic :: parse => parse_comp_set
     procedure, private :: parse_comp_set
   end type
 
@@ -369,31 +368,6 @@ contains
     err%msg = msg
   end
 
-  !> Determine whether the version meets the comparison expressed in `str`.
-  !>
-  !> Valid operators are `>`, `>=`, `<`, `<=`, `=` and `!=`.
-  !>
-  !> Example:
-  !>
-  !> program main
-  !>   use version_f
-  !>   implicit none
-  !>
-  !>   type(version_t) :: version
-  !>   character(*), parameter :: requirement = '>=1.2.3'
-  !>   logical :: is_satisfied
-  !>   type(error_t), allocatable :: error
-  !>
-  !>   version = version_t(1, 2, 3)
-  !>   call version%try_satisfy(requirement, is_satisfied, error)
-  !>   if (allocated(error)) return
-  !>
-  !>   if (is_satisfied) then
-  !>     print *, "Version '", version%to_string(), "' meets the requirement '", requirement, "'."
-  !>   else
-  !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
-  !>   end if
-  !> end
   subroutine try_satisfy(string)
     character(*), intent(in) :: string
     type(version_range_t) :: version_range
@@ -406,41 +380,25 @@ contains
   end
 
   subroutine parse_version_range(this, string)
-
-    !> Sets of comparators to be determined. They are separated by `||` if there
-    !> are multiple sets.
     class(version_range_t), intent(out) :: this
-
-    !> Input string to be evaluated.
     character(*), intent(in) :: string
-    
+
     type(comparator_set_t) :: comp_set
-    type(error_t), allocatable :: error
 
     allocate (this%comp_sets(0))
 
-    call comp_set%parse_comp_set(string, error)
-    if (allocated(error)) return
+    call comp_set%parse_comp_set(string)
 
     this%comp_sets = [this%comp_sets, comp_set]
   end
 
-  !> Parse a set of comparators that are separated by ` ` from a string. An
-  !> example of a set of two comparators is `>=1.2.3 <2.0.0`.
-  subroutine parse_comp_set(this, string, error)
-
-    !> Set of comparators to be determined. They are separated by ` ` if there
-    !> are multiple comparators.
+  subroutine parse_comp_set(this, string)
     class(comparator_set_t), intent(out) :: this
-
-    !> Input string to be evaluated.
     character(*), intent(in) :: string
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
 
     character(:), allocatable :: str
     type(comparator_t) :: comp
+    type(error_t), allocatable :: error
 
     str = trim(adjustl(string))
 
