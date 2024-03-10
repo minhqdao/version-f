@@ -7,7 +7,7 @@ program test
   logical :: is_satisfied
   type(error_t), allocatable :: e
 
-!##################################try_satisfy#################################!
+   v1 = version_t(0, 1, 0)
 
   call v1%try_satisfy('  > 1.0.1 <  2.1.0 ', is_satisfied, e)
   if (is_satisfied) call fail('satisfy-36 should not satisfy.')
