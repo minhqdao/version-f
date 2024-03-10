@@ -39,33 +39,12 @@ module version_f
 
     procedure :: try_satisfy
 
-    generic :: create => try_create
-    procedure, private :: try_create
-
     generic :: parse => try_parse
     procedure, private :: try_parse
-
-    generic :: operator(==) => equals
-    procedure, private :: equals
-
-    generic :: operator(/=) => not_equals
-    procedure, private :: not_equals
-
-    generic :: operator(>) => greater_than
-    procedure, private :: greater_than
-
-    generic :: operator(<) => less_than
-    procedure, private :: less_than
-
-    generic :: operator(>=) => greater_equals
-    procedure, private :: greater_equals
-
-    generic :: operator(<=) => less_equals
-    procedure, private :: less_equals
   end type
 
   interface version_t
-    module procedure create, parse
+    module procedure parse
   end interface
 
   type :: error_t
@@ -106,121 +85,6 @@ module version_f
   end type
 
 contains
-
-  !> Wrapper function for `try_create`.
-  !>
-  !> Can be invoked by calling the default constructor.
-  !>
-  !> In strict mode, all major, minor and patch versions must be provided.
-  function create(major, minor, patch, prerelease, build, strict_mode) result(this)
-    integer, intent(in) :: major
-    integer, optional, intent(in) :: minor
-    integer, optional, intent(in) :: patch
-    character(*), optional, intent(in) :: prerelease
-    character(*), optional, intent(in) :: build
-    logical, optional, intent(in) :: strict_mode
-    type(version_t) :: this
-
-    type(error_t), allocatable :: error
-
-    call try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    if (allocated(error)) error stop error%msg
-  end
-
-  !> Create a version from individual major, minor, patch, prerelease and build
-  !> arguments.
-  !>
-  !> Version numbers must be positive integers.
-  !>
-  !> Prelease and build versions are entered through a series of dot-separated
-  !> identifiers. The identifiers must be composed of ASCII letters, digits or
-  !> hyphens. They must not be empty and must not begin or end with
-  !> with a dot. Numerical identifiers must not start with a zero.
-  !>
-  !> Valid examples:
-  !>
-  !> ```fortran
-  !> type(version_t) :: v
-  !> type(error_t), allocatable :: err
-  !>
-  !> call v%create(0, 1, 0, error=err) ! 0.1.0
-  !> call v%create(1, error=err) ! 1.0.0
-  !> call v%create(1, 2, 3, 'alpha.1', 'build.1', err) ! 1.2.3-alpha.1+build.1
-  !> ```
-  !>
-  !> Invalid examples:
-  !>
-  !> ```fortran
-  !> type(version_t) :: v
-  !> type(error_t), allocatable :: err
-  !>
-  !> call v%create(0, -1, 0, error=err) ! allocated(err) == .true.
-  !> call v%create(1, build='0.0', error=err) ! allocated(err) == .true.
-  !> call v%create(1, prerelease='.hi.', error=err) ! allocated(err) == .true.
-  !> ```
-  !>
-  !> The default way is to create a version using the constructor.
-  !>
-  !> Use this procedure if you want to handle errors yourself.
-  !>
-  !> In strict mode, all major, minor and patch versions must be provided.
-  subroutine try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    class(version_t), intent(out) :: this
-    integer, intent(in) :: major
-    integer, optional, intent(in) :: minor
-    integer, optional, intent(in) :: patch
-    character(*), optional, intent(in) :: prerelease
-    character(*), optional, intent(in) :: build
-    type(error_t), allocatable, intent(out) :: error
-    logical, optional, intent(in) :: strict_mode
-
-    logical :: is_strict_mode
-
-    if (present(strict_mode)) then
-      is_strict_mode = strict_mode
-    else
-      is_strict_mode = .false.
-    end if
-
-    if (major < 0) then
-      error = error_t('Version numbers must not be negative.'); return
-    end if
-    this%major = major
-
-    if (present(minor)) then
-      if (minor < 0) then
-        error = error_t('Version numbers must not be negative.'); return
-      end if
-      this%minor = minor
-    else
-      if (is_strict_mode) then
-        error = error_t('Strict mode: Minor version must be provided.'); return
-      end if
-      this%minor = 0
-    end if
-
-    if (present(patch)) then
-      if (patch < 0) then
-        error = error_t('Version numbers must not be negative.'); return
-      end if
-      this%patch = patch
-    else
-      if (is_strict_mode) then
-        error = error_t('Strict mode: Patch version must be provided.'); return
-      end if
-      this%patch = 0
-    end if
-
-    if (present(prerelease)) then
-      call build_identifiers(this%prerelease, prerelease, error)
-      if (allocated(error)) return
-    end if
-
-    if (present(build)) then
-      call build_identifiers(this%build, build, error)
-      if (allocated(error)) return
-    end if
-  end
 
   !> Parse a string into a version including prerelease and build data.
   !>
@@ -484,120 +348,6 @@ contains
     string_t_is_numeric = verify(this%str, '0123456789') == 0
   end
 
-  !> Check two versions for equality.
-  elemental logical function equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    integer :: i
-
-    equals = lhs%major == rhs%major &
-    &  .and. lhs%minor == rhs%minor &
-    &  .and. lhs%patch == rhs%patch
-
-    if (.not. equals) return
-
-    if (allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
-      if (size(lhs%prerelease) /= size(rhs%prerelease)) then
-        equals = .false.; return
-      end if
-      do i = 1, size(lhs%prerelease)
-        if (lhs%prerelease(i)%str /= rhs%prerelease(i)%str) then
-          equals = .false.; return
-        end if
-      end do
-    else if (allocated(lhs%prerelease) .or. allocated(rhs%prerelease)) then
-      equals = .false.
-    end if
-  end
-
-  !> Check two versions for inequality.
-  elemental logical function not_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    not_equals = .not. lhs == rhs
-  end
-
-  !> Check if the first version is greater than the second.
-  elemental logical function greater_than(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    greater_than = lhs%major > rhs%major &
-    & .or. (lhs%major == rhs%major &
-    & .and. lhs%minor > rhs%minor) &
-    & .or. (lhs%major == rhs%major &
-    & .and. lhs%minor == rhs%minor &
-    & .and. lhs%patch > rhs%patch)
-
-    if (greater_than) return
-
-    if (lhs%major == rhs%major .and. lhs%minor == rhs%minor .and. lhs%patch == rhs%patch) then
-      if (allocated(lhs%prerelease) .and. .not. allocated(rhs%prerelease)) then
-        greater_than = .false.
-      else if (.not. allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
-        greater_than = .true.
-      else if (allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
-        greater_than = is_greater(lhs%prerelease, rhs%prerelease)
-      end if
-    end if
-  end
-
-  !> Check if the first version is smaller than the second.
-  elemental logical function less_than(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    less_than = .not. lhs > rhs .and. .not. lhs == rhs
-  end
-
-  !> Check if the first version is greater than or equal to the second.
-  elemental logical function greater_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    greater_equals = lhs > rhs .or. lhs == rhs
-  end
-
-  !> Check if the first version is smaller than or equal to the second.
-  elemental logical function less_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
-
-    less_equals = .not. lhs > rhs
-  end
-
-  !> Check if the first prerelease (`lhs`) is greater than the second (`rhs`).
-  pure logical function is_greater(lhs, rhs)
-    type(string_t), intent(in) :: lhs(:)
-    type(string_t), intent(in) :: rhs(:)
-
-    integer :: i, j
-
-    do i = 1, min(size(lhs), size(rhs))
-      if (lhs(i)%str == rhs(i)%str) cycle
-      if (lhs(i)%is_numeric() .and. rhs(i)%is_numeric()) then
-        is_greater = s2i(lhs(i)%str) > s2i(rhs(i)%str); return
-      else if (lhs(i)%is_numeric()) then
-        is_greater = .false.; return
-      else if (rhs(i)%is_numeric()) then
-        is_greater = .true.; return
-      end if
-
-      do j = 1, min(len(lhs(i)%str), len(rhs(i)%str))
-        if (lhs(i)%str(j:j) == rhs(i)%str(j:j)) cycle
-        is_greater = lhs(i)%str(j:j) > rhs(i)%str(j:j); return
-      end do
-
-      if (len(lhs(i)%str) /= len(rhs(i)%str)) then
-        is_greater = len(lhs(i)%str) > len(rhs(i)%str); return
-      end if
-    end do
-
-    is_greater = size(lhs) > size(rhs)
-  end
-
   !> Helper function to generate a new `string_t` instance.
   elemental function create_string_t(inp_str) result(string)
 
@@ -666,9 +416,8 @@ contains
     call version_range%parse(string, error)
     if (allocated(error)) return
 
-    if (version_range%comp_sets(1)%comps(1)%op == '>') then
-      print *, 'Operator not >'
-      stop 1
+    if (version_range%comp_sets(1)%comps(1)%op /= '>') then
+      print *, 'Operator not >: ', version_range%comp_sets(1)%comps(1)%op; stop 1
     end if
   end
 
