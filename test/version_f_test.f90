@@ -2,7 +2,7 @@ program test
   use version_f
   implicit none
 
-  call try_satisfy('> 1.0.1 <  2.1.0')
+  call try_satisfy()
 
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
 

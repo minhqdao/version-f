@@ -325,39 +325,32 @@ contains
     err%msg = msg
   end
 
-  subroutine try_satisfy(string)
-    character(*), intent(in) :: string
+  subroutine try_satisfy()
     type(version_range_t) :: version_range
 
-    call version_range%parse_version_range(string)
+    call version_range%parse_version_range()
 
     if (version_range%comp_sets(1)%comps(1)%op /= '>') then
       print *, 'Operator not >: ', version_range%comp_sets(1)%comps(1)%op; stop 1
     end if
   end
 
-  subroutine parse_version_range(this, string)
+  subroutine parse_version_range(this)
     class(version_range_t), intent(out) :: this
-    character(*), intent(in) :: string
 
     type(comparator_set_t) :: comp_set
 
     allocate (this%comp_sets(0))
 
-    call comp_set%parse_comp_set(string)
+    call comp_set%parse_comp_set()
 
     this%comp_sets = [this%comp_sets, comp_set]
   end
 
-  subroutine parse_comp_set(this, string)
+  subroutine parse_comp_set(this)
     class(comparator_set_t), intent(out) :: this
-    character(*), intent(in) :: string
 
-    character(:), allocatable :: str
     type(comparator_t) :: comp
-    type(error_t), allocatable :: error
-
-    str = trim(adjustl(string))
 
     allocate (this%comps(0))
 
