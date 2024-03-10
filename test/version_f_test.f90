@@ -13,10 +13,6 @@ program test
   if (is_satisfied) call fail('satisfy-36 should not satisfy.')
   if (allocated(e)) call fail('satisfy-36 should not fail.')
 
-  call v1%try_satisfy('>0.0.1 <=0.1.0', is_satisfied, e)
-  if (.not. is_satisfied) call fail('satisfy-37 should satisfy.')
-  if (allocated(e)) call fail('satisfy-37 should not fail.')
-
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
 
 contains

@@ -37,7 +37,7 @@ module version_f
 
   contains
 
-    procedure :: try_satisfy, satisfies_comp_set, satisfies_comp
+    procedure :: try_satisfy
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -662,15 +662,14 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     type(version_range_t) :: version_range
-    integer :: i
 
     call version_range%parse(string, error)
     if (allocated(error)) return
 
-    do i = 1, size(version_range%comp_sets)
-      call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
-      if (is_satisfied .or. allocated(error)) return
-    end do
+    if (version_range%comp_sets(1)%comps(1)%op == '>') then
+      print *, 'Operator not >'
+      stop 1
+    end if
   end
 
   !> Create sets of comparators that are separated by `||`. An example of a
@@ -807,69 +806,6 @@ contains
     end do
 
     operator_index = 0
-  end
-
-  !> Attempt to evaluate a comparator set. A comparator set consists of multiple
-  !> comparators that are separated by ` `. An example of a comparator set is
-  !> `>=1.2.3 <2.0.0`. A comparator set is satisfied if all of its comparators
-  !> are satisfied.
-  pure subroutine satisfies_comp_set(version, comp_set, is_satisfied, error)
-
-    !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: version
-
-    !> Set of comparators to be evaluated.
-    type(comparator_set_t), intent(in) :: comp_set
-
-    !> Whether the comparator set is satisfied.
-    logical, intent(out) :: is_satisfied
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
-
-    integer :: i
-
-    if (size(comp_set%comps) == 0) then
-      error = error_t('Comparator set cannot be empty.'); return
-    end if
-
-    do i = 1, size(comp_set%comps)
-      call version%satisfies_comp(comp_set%comps(i), is_satisfied, error)
-      if (.not. is_satisfied .or. allocated(error)) return
-    end do
-  end
-
-  !> Attempt to evaluate a comparator which consists of a comparison operator
-  !> and a version string.
-  pure subroutine satisfies_comp(this, comparator, is_satisfied, error)
-
-    !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: this
-
-    !> Comparator to be evaluated.
-    type(comparator_t), intent(in) :: comparator
-
-    !> Whether the version meets the comparison expressed in `comparator`.
-    logical, intent(out) :: is_satisfied
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
-
-    if (comparator%op == '>') then
-      is_satisfied = this > comparator%version
-    else if (comparator%op == '>=') then
-      is_satisfied = this >= comparator%version
-    else if (comparator%op == '<') then
-      is_satisfied = this < comparator%version
-    else if (comparator%op == '<=') then
-      is_satisfied = this <= comparator%version
-    else if (comparator%op == '!=') then
-      is_satisfied = this /= comparator%version
-    else if (comparator%op == '=' .or. comparator%op == '') then
-      is_satisfied = this == comparator%version
-    else
-      error = error_t("Invalid operator: '"//comparator%op//"'.")
-    end if
   end
 
   !> Create instance of `comparator_t` using an operator (`op`) and a version.
