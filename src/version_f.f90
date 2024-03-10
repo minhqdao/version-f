@@ -723,26 +723,11 @@ contains
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
-    integer :: i_sep
-    character(:), allocatable :: str
     type(comparator_set_t) :: comp_set
 
-    str = string
     allocate (this%comp_sets(0))
 
-    i_sep = index(str, '||')
-
-    do while (i_sep /= 0)
-      call comp_set%parse_comp_set(str(1:i_sep - 1), error)
-      if (allocated(error)) return
-
-      this%comp_sets = [this%comp_sets, comp_set]
-
-      str = str(i_sep + 2:)
-      i_sep = index(str, '||')
-    end do
-
-    call comp_set%parse_comp_set(str, error)
+    call comp_set%parse_comp_set(string, error)
     if (allocated(error)) return
 
     this%comp_sets = [this%comp_sets, comp_set]
