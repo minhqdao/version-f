@@ -74,6 +74,8 @@ contains
     comp%version%major = 2
     comp%version%minor = 1
     comp%version%patch = 0
+    print *, 'before array extension: ', this%comps(1)%op ! Pay attention to this
     this%comps = [this%comps, comp]
+    print *, 'after array extension: ', this%comps(1)%op ! And this
   end
 end
