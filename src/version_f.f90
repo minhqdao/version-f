@@ -2,8 +2,7 @@ module version_f
   implicit none
   private
 
-  public :: version_t, string_t, error_t, version_range_t, &
-            comparator_set_t, comparator_t, operator_index, try_satisfy
+  public :: try_satisfy
 
   type :: string_t
     character(:), allocatable :: str
@@ -362,40 +361,17 @@ contains
 
     allocate (this%comps(0))
 
-    do
-      if (len(str) == 0) then
-        call comp%parse_comp_and_crop_str('', str, error)
-      else if (str(1:1) == '>') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('>', str, error)
-        else if (str(2:2) == '=') then
-          call comp%parse_comp_and_crop_str('>=', str, error)
-        else
-          call comp%parse_comp_and_crop_str('>', str, error)
-        end if
-      else if (str(1:1) == '<') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('<', str, error)
-        else if (str(2:2) == '=') then
-          call comp%parse_comp_and_crop_str('<=', str, error)
-        else
-          call comp%parse_comp_and_crop_str('<', str, error)
-        end if
-      else if (str(1:1) == '=') then
-        call comp%parse_comp_and_crop_str('=', str, error)
-      else if (len(str) == 1) then
-        call comp%parse_comp_and_crop_str('', str, error)
-      else if (str(1:2) == '!=') then
-        call comp%parse_comp_and_crop_str('!=', str, error)
-      else
-        call comp%parse_comp_and_crop_str('', str, error)
-      end if
+    comp%op = '>'
+    comp%version%major = 1
+    comp%version%minor = 0
+    comp%version%patch = 1
+    this%comps = [this%comps, comp]
 
-      if (allocated(error)) return
-      this%comps = [this%comps, comp]
-      if (str == '') return
-      str = trim(adjustl(str))
-    end do
+    comp%op = '<'
+    comp%version%major = 2
+    comp%version%minor = 1
+    comp%version%patch = 0
+    this%comps = [this%comps, comp]
   end
 
   subroutine parse_comp_and_crop_str(comp, op, str, error)
