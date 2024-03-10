@@ -78,7 +78,6 @@ module version_f
   type :: version_range_t
     type(comparator_set_t), allocatable :: comp_sets(:)
   contains
-    generic :: parse => parse_version_range
     procedure, private :: parse_version_range
   end type
 
@@ -399,7 +398,7 @@ contains
     character(*), intent(in) :: string
     type(version_range_t) :: version_range
 
-    call version_range%parse(string)
+    call version_range%parse_version_range(string)
 
     if (version_range%comp_sets(1)%comps(1)%op /= '>') then
       print *, 'Operator not >: ', version_range%comp_sets(1)%comps(1)%op; stop 1
