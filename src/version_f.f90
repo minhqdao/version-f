@@ -1,6 +1,3 @@
-!> The main and only module of `version-f` containing all the types and
-!> procedures that are necessary to create, parse, compare, convert and
-!> manipulate version numbers.
 module version_f
   implicit none
   private
@@ -21,22 +18,13 @@ module version_f
     module procedure :: create_string_t
   end interface
 
-  !> Contains all version information.
   type :: version_t
-    !> The major version number. Incremented when breaking changes are made.
     integer :: major
-    !> The minor version number. It is incremented when new functionality is
-    !> added in a backwards-compatible manner.
     integer :: minor
-    !> The patch version number. Incremented for backwards-compatible bug fixes.
     integer :: patch
-    !> Pre-release version identifiers that are used for comparisons.
     type(string_t), allocatable :: prerelease(:)
-    !> Build metadata that does not contribute to sorting.
     type(string_t), allocatable :: build(:)
-
   contains
-
     generic :: parse => try_parse
     procedure, private :: try_parse
   end type
@@ -82,14 +70,6 @@ module version_f
 
 contains
 
-  !> Parse a string into a version including prerelease and build data.
-  !>
-  !> Wrapper function for `try_parse`.
-  !>
-  !> Can be invoked by calling the default constructor.
-  !>
-  !> In strict mode, all major, minor and patch versions must be provided. Implicit
-  !> zeros are forbidden in strict mode.
   function parse(str, strict_mode) result(version)
     character(*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
@@ -101,9 +81,6 @@ contains
     if (allocated(error)) error stop error%msg
   end
 
-  !> Attempt to parse a string into a version including prerelease and build
-  !> data. In strict mode, all major, minor and patch versions must be provided.
-  !> Implicit zeros are forbidden in strict mode.
   subroutine try_parse(this, string, error, strict_mode)
     class(version_t), intent(out) :: this
     character(*), intent(in) :: string
@@ -137,9 +114,6 @@ contains
     end if
   end
 
-  !> Build the `major.minor.patch` part of the version. In strict mode, all
-  !> major, minor and patch versions must be provided. Implicit zeros are
-  !> forbidden in strict mode.
   subroutine build_mmp(this, str, error, strict_mode)
     type(version_t), intent(out) :: this
     character(*), intent(in) :: str
@@ -200,7 +174,6 @@ contains
     end if
   end
 
-  !> Convert a string to an integer.
   pure subroutine s2int(str, num, error)
     character(*), intent(in) :: str
     integer, intent(out) :: num
@@ -220,7 +193,6 @@ contains
     end do
   end
 
-  !> Wrapper function for `s2int`.
   elemental integer function s2i(str)
     character(*), intent(in) :: str
 
@@ -230,7 +202,6 @@ contains
     if (allocated(e)) error stop e%msg
   end
 
-  !> Convert a `string_t` to an integer.
   elemental integer function string_t_2i(this)
     class(string_t), intent(in) :: this
 
@@ -240,7 +211,6 @@ contains
     if (allocated(e)) error stop e%msg
   end
 
-  !> Convert an integer to a string.
   pure function int2s(num) result(str)
     integer, intent(in) :: num
     character(:), allocatable :: str
@@ -260,8 +230,6 @@ contains
     write (str, '(I0)') num
   end
 
-  !> Check for valid prerelease or build data and build identfiers from
-  !> the string.
   pure subroutine build_identifiers(ids, str, error)
     type(string_t), allocatable, intent(out) :: ids(:)
     character(*), intent(in) :: str
@@ -328,7 +296,6 @@ contains
     end if
   end
 
-  !> Check if the string is purely numerical.
   elemental function is_numerical(str)
     character(*), intent(in) :: str
     logical :: is_numerical
@@ -336,7 +303,6 @@ contains
     is_numerical = verify(str, '0123456789') == 0
   end
 
-  !> Check if string_t is purely numeric.
   elemental function string_t_is_numeric(this)
     class(string_t), intent(in) :: this
     logical :: string_t_is_numeric
@@ -344,25 +310,17 @@ contains
     string_t_is_numeric = verify(this%str, '0123456789') == 0
   end
 
-  !> Helper function to generate a new `string_t` instance.
   elemental function create_string_t(inp_str) result(string)
-
-    !> Input string.
     character(*), intent(in) :: inp_str
 
-    !> The string instance.
     type(string_t) :: string
 
     string%str = inp_str
   end
 
-  !> Helper function to generate a new `error_t` instance.
   elemental function create_error_t(msg) result(err)
-
-    !> Error message.
     character(*), intent(in) :: msg
 
-    !> The error instance.
     type(error_t) :: err
 
     err%msg = msg
@@ -402,10 +360,6 @@ contains
 
     str = trim(adjustl(string))
 
-    if (len(str) == 0) then
-      error = error_t('Comparator set cannot be empty.'); return
-    end if
-
     allocate (this%comps(0))
 
     do
@@ -444,20 +398,10 @@ contains
     end do
   end
 
-  !> Create a comparator from a string. A comparator consists of an operator and
-  !> a version. An example of a comparator is `>=1.2.3`.
   subroutine parse_comp_and_crop_str(comp, op, str, error)
-
-    !> Comparator to be determined.
     class(comparator_t), intent(out) :: comp
-
-    !> The operator of the comparator.
     character(*), intent(in) :: op
-
-    !> Input string to be evaluated.
     character(*), intent(inout) :: str
-
-    !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
@@ -476,10 +420,7 @@ contains
     if (allocated(error)) return
   end
 
-  !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
   elemental integer function operator_index(str)
-
-    !> Input string to be evaluated.
     character(*), intent(in) :: str
 
     integer :: i
@@ -495,29 +436,18 @@ contains
     operator_index = 0
   end
 
-  !> Create instance of `comparator_t` using an operator (`op`) and a version.
   elemental function create_comp(op, version) result(comparator)
-
-    !> The operator of the comparator.
     character(*), intent(in) :: op
-
-    !> The version of the comparator.
     type(version_t), intent(in) :: version
-
-    !> Instance of `comparator_t` created from `op` and `version`.
     type(comparator_t) :: comparator
 
     comparator%op = op
     comparator%version = version
   end
 
-  !> Create instance of `comparator_set_t` using an array of comparators.
   pure function create_comp_set(comps) result(comp_set)
-
-    !> Array of comparators to create the set from.
     type(comparator_t), intent(in) :: comps(:)
 
-    !> Instance of `comparator_set_t` created from `comps`.
     type(comparator_set_t) :: comp_set
 
     comp_set%comps = comps
