@@ -661,23 +661,14 @@ contains
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
-    character(:), allocatable :: str
     type(version_range_t) :: version_range
     integer :: i
 
-    str = trim(adjustl(string))
-
-    if (len(str) == 0) then
-      error = error_t('Do not compare empty expressions.'); return
-    end if
-
-    call version_range%parse(str, error)
-    print *, 'parse error ', allocated(error)
+    call version_range%parse(string, error)
     if (allocated(error)) return
 
     do i = 1, size(version_range%comp_sets)
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
-      print *, 'satisfy error ', error%msg
       if (is_satisfied .or. allocated(error)) return
     end do
   end
