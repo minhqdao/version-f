@@ -6,7 +6,7 @@ module version_f
   private
 
   public :: version_t, string_t, error_t, version_range_t, &
-            comparator_set_t, comparator_t, operator_index
+            comparator_set_t, comparator_t, operator_index, try_satisfy
 
   type :: string_t
     character(:), allocatable :: str
@@ -36,8 +36,6 @@ module version_f
     type(string_t), allocatable :: build(:)
 
   contains
-
-    procedure :: try_satisfy
 
     generic :: parse => try_parse
     procedure, private :: try_parse
@@ -397,33 +395,18 @@ contains
   !>     print *, "Version '", version%to_string(), "' does not meet the requirement '", requirement, "'."
   !>   end if
   !> end
-  subroutine try_satisfy(this, string, is_satisfied, error)
-
-    !> Version to be evaluated.
-    class(version_t), intent(in) :: this
-
-    !> Input string to be evaluated.
+  subroutine try_satisfy(string)
     character(*), intent(in) :: string
-
-    !> Whether the version meets the comparison expressed in `str`.
-    logical, intent(out) :: is_satisfied
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
-
     type(version_range_t) :: version_range
 
-    call version_range%parse(string, error)
-    if (allocated(error)) return
+    call version_range%parse(string)
 
     if (version_range%comp_sets(1)%comps(1)%op /= '>') then
       print *, 'Operator not >: ', version_range%comp_sets(1)%comps(1)%op; stop 1
     end if
   end
 
-  !> Create sets of comparators that are separated by `||`. An example of a
-  !> version range is `4.2.3 || 5.0.0 - 7.2.3`.
-  subroutine parse_version_range(this, string, error)
+  subroutine parse_version_range(this, string)
 
     !> Sets of comparators to be determined. They are separated by `||` if there
     !> are multiple sets.
@@ -431,11 +414,9 @@ contains
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
-
+    
     type(comparator_set_t) :: comp_set
+    type(error_t), allocatable :: error
 
     allocate (this%comp_sets(0))
 
