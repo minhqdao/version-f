@@ -37,7 +37,7 @@ module version_f
 
   contains
 
-    procedure :: to_string, try_satisfy, satisfies_comp_set, satisfies_comp
+    procedure :: try_satisfy, satisfies_comp_set, satisfies_comp
 
     generic :: create => try_create
     procedure, private :: try_create
@@ -219,35 +219,6 @@ contains
     if (present(build)) then
       call build_identifiers(this%build, build, error)
       if (allocated(error)) return
-    end if
-  end
-
-  !> Returns a string representation of the version including prerelease and
-  !> build data.
-  pure function to_string(this) result(str)
-    class(version_t), intent(in) :: this
-    character(:), allocatable :: str
-
-    integer :: i
-
-    str = trim(int2s(this%major))//'.' &
-    &   //trim(int2s(this%minor))//'.' &
-    &   //trim(int2s(this%patch))
-
-    if (allocated(this%prerelease)) then
-      str = str//'-'
-      do i = 1, size(this%prerelease)
-        str = str//this%prerelease(i)%str
-        if (i < size(this%prerelease)) str = str//'.'
-      end do
-    end if
-
-    if (allocated(this%build)) then
-      str = str//'+'
-      do i = 1, size(this%build)
-        str = str//this%build(i)%str
-        if (i < size(this%build)) str = str//'.'
-      end do
     end if
   end
 
@@ -701,10 +672,12 @@ contains
     end if
 
     call version_range%parse(str, error)
+    print *, 'parse error ', allocated(error)
     if (allocated(error)) return
 
     do i = 1, size(version_range%comp_sets)
       call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
+      print *, 'satisfy error ', error%msg
       if (is_satisfied .or. allocated(error)) return
     end do
   end
