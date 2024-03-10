@@ -43,23 +43,13 @@ module version_f
   type :: comparator_t
     character(:), allocatable :: op
     type(version_t) :: version
-  contains
-    procedure, private :: parse_comp_and_crop_str
   end type
-
-  interface comparator_t
-    module procedure :: create_comp
-  end interface
 
   type :: comparator_set_t
     type(comparator_t), allocatable :: comps(:)
   contains
     procedure, private :: parse_comp_set
   end type
-
-  interface comparator_set_t
-    module procedure :: create_comp_set
-  end interface
 
   type :: version_range_t
     type(comparator_set_t), allocatable :: comp_sets(:)
@@ -365,60 +355,5 @@ contains
     comp%version%minor = 1
     comp%version%patch = 0
     this%comps = [this%comps, comp]
-  end
-
-  subroutine parse_comp_and_crop_str(comp, op, str, error)
-    class(comparator_t), intent(out) :: comp
-    character(*), intent(in) :: op
-    character(*), intent(inout) :: str
-    type(error_t), allocatable, intent(out) :: error
-
-    integer :: i
-
-    comp%op = op
-    str = trim(adjustl(str(len(op) + 1:)))
-
-    i = operator_index(str)
-    if (i == 0) then
-      call comp%version%parse(str, error)
-      str = ''
-    else
-      call comp%version%parse(str(:i - 1), error)
-      str = str(i:)
-    end if
-    if (allocated(error)) return
-  end
-
-  elemental integer function operator_index(str)
-    character(*), intent(in) :: str
-
-    integer :: i
-    character :: char
-
-    do i = 1, len(str)
-      char = str(i:i)
-      if (char == '>' .or. char == '<' .or. char == '!' .or. char == '=' .or. char == ' ') then
-        operator_index = i; return
-      end if
-    end do
-
-    operator_index = 0
-  end
-
-  elemental function create_comp(op, version) result(comparator)
-    character(*), intent(in) :: op
-    type(version_t), intent(in) :: version
-    type(comparator_t) :: comparator
-
-    comparator%op = op
-    comparator%version = version
-  end
-
-  pure function create_comp_set(comps) result(comp_set)
-    type(comparator_t), intent(in) :: comps(:)
-
-    type(comparator_set_t) :: comp_set
-
-    comp_set%comps = comps
   end
 end
