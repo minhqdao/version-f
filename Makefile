@@ -11,10 +11,10 @@ NAME := version-f
 STATIC := lib$(NAME).a
 
 ifeq ($(shell uname), Linux)
-    SHARED := lib$(NAME).so
+	SHARED := lib$(NAME).so
 	LDFLAGS := -Wl,-rpath=.
 else ifeq ($(shell uname), Darwin)
-    SHARED := lib$(NAME).dylib
+	SHARED := lib$(NAME).dylib
 endif
 
 SRCDIR := src
