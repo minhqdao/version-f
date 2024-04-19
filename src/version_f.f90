@@ -1111,6 +1111,7 @@ contains
     !> Instance of `comparator_set_t` created from `comps`.
     type(comparator_set_t) :: comp_set
 
+    allocate (comp_set%comps(size(comps)))
     comp_set%comps = comps
   end
 

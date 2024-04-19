@@ -8,22 +8,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
-          # - { compiler: gcc, version: 13 }
-          - { compiler: gcc, version: 10 }
-          - { compiler: intel, version: 2023.2 }
-          # - { compiler: intel-classic, version: 2021.10 }
+          - { compiler: gcc, version: 13 }
+          - { compiler: intel, version: 2024.1 }
+          - { compiler: intel-classic, version: 2021.10 }
         exclude:
           - os: macos-latest
-            toolchain: { compiler: intel, version: 2023.2 }
-          # - os: macos-latest
-          #   toolchain: { compiler: intel-classic, version: 2021.10 }
+            toolchain: { compiler: intel, version: 2024.1 }
+          - os: windows-latest
+            toolchain: { compiler: intel, version: 2024.1 }
+          - os: windows-latest
+            toolchain: { intel-classic, version: 2021.10 }
         include:
           - os: ubuntu-latest
             toolchain: { compiler: nvidia-hpc, version: 23.11 }
-          - os: ubuntu-latest
-            toolchain: { compiler: intel-classic, version: 2021.10 }
-          # - os: macos-13
-          #   toolchain: { compiler: intel-classic, version: 2021.10 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -41,17 +38,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         toolchain:
           - { compiler: gcc, version: 13 }
           - { compiler: intel, version: 2023.2 }
           - { compiler: intel-classic, version: 2021.10 }
           - { compiler: nvidia-hpc, version: 23.11 }
-        include:
+        exclude:
           - os: macos-latest
-            toolchain: { compiler: gcc, version: 13 }
-          - os: macos-13
-            toolchain: { compiler: intel-classic, version: 2021.10 }
+            toolchain: { compiler: intel, version: 2023.2 }
+          - os: macos-latest
+            toolchain: { compiler: nvidia-hpc, version: 23.11 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
