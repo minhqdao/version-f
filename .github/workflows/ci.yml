@@ -14,10 +14,6 @@ jobs:
         exclude:
           - os: macos-latest
             toolchain: { compiler: intel, version: "2024.1" }
-          - os: windows-latest
-            toolchain: { compiler: intel, version: "2024.1" }
-          - os: windows-latest
-            toolchain: { intel-classic, version: "2021.10" }
         include:
           - os: ubuntu-latest
             toolchain: { compiler: nvidia-hpc, version: "23.11" }
