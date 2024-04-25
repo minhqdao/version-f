@@ -20,12 +20,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: fortran-lang/setup-fortran@v1
+      - uses: fortran-lang/setup-fortran@848728b9f8f277e196a7e4e1afb61474c4869d2e
         id: setup-fortran
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - uses: fortran-lang/setup-fpm@v5
+      - uses: fortran-lang/setup-fpm@
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
