@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: wpbonelli/setup-fortran@848728b9f8f277e196a7e4e1afb61474c4869d2e
+      - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
           compiler: ${{ matrix.toolchain.compiler }}
