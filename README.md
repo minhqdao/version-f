@@ -46,6 +46,8 @@ make
 
 This will generate the static library `libversion-f.a` in the root directory. You can compile it alongside your project or link it using the `-L` and `-l` flags.
 
+A dynamic library will also be created for use in your projects (suffix `.so` on Linux systems and `.dylib` on macOS).
+
 If you wish to use a compiler other than `gfortran`, simply specify it by running:
 
 ```bash
