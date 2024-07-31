@@ -107,8 +107,8 @@ jobs:
         with:
           msystem: mingw64
           install: >-
-            make
             mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-make
       - run: make test
 
   make-test-ucrt64-gcc:
@@ -122,8 +122,8 @@ jobs:
         with:
           msystem: ucrt64
           install: >-
-            make
             mingw-w64-ucrt-x86_64-gcc-fortran
+            mingw-w64-ucrt-x86_64-make
       - run: make test
 
   format:
