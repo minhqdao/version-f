@@ -39,7 +39,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
 
-  fpm-test-mingw64-gcc:
+  test-msys2:
+    strategy:
+      matrix:
+        include:
+          [
+            { msystem: mingw64, build_variant: "" },
+            { msystem: ucrt64, build_variant: "-ucrt" },
+          ]
     runs-on: windows-latest
     defaults:
       run:
@@ -48,25 +55,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: mingw64
+          msystem: ${{ matrix.msystem }}
           install: >-
-            mingw-w64-x86_64-gcc-fortran
-            mingw-w64-x86_64-fpm
-      - run: fpm test
-
-  fpm-test-ucrt64-gcc:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: ucrt64
-          install: >-
-            mingw-w64-ucrt-x86_64-gcc-fortran
-            mingw-w64-ucrt-x86_64-fpm
+            mingw-w64${{ matrix.build_variant }}-x86_64-gcc-fortran
+            mingw-w64${{ matrix.build_variant }}-x86_64-fpm
       - run: fpm test
 
   make-test:
