@@ -34,7 +34,7 @@ jobs:
       - name: macos workaround
         if: runner.os == 'macos'
         run: brew install gcc@10
-      - uses: fortran-lang/setup-fpm@v5
+      - uses: fortran-lang/setup-fpm@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: fpm test
