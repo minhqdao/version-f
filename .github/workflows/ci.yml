@@ -30,9 +30,6 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - name: macos workaround
-        if: runner.os == 'macos'
-        run: brew install gcc@10
       - uses: fortran-lang/setup-fpm@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -64,9 +61,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
         toolchain:
-          - { compiler: gcc, version: "13" }
+          - { compiler: gcc, version: "15" }
         include:
           - os: ubuntu-latest
             toolchain: { compiler: intel, version: "2024.1" }
@@ -76,6 +73,8 @@ jobs:
             toolchain: { compiler: intel-classic, version: "2021.10" }
           - os: ubuntu-latest
             toolchain: { compiler: nvidia-hpc, version: "23.11" }
+          - os: ubuntu-latest
+            toolchain: { compiler: lfortran, version: "0.58.0" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
