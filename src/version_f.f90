@@ -171,7 +171,7 @@ contains
   !>
   !> In strict mode, all major, minor and patch versions must be provided.
   subroutine try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    class(version_t), intent(out) :: this
+    type(version_t), intent(out) :: this
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
     integer, optional, intent(in) :: patch
@@ -235,7 +235,7 @@ contains
   !> Returns a string representation of the version including prerelease and
   !> build data.
   pure function to_string(this) result(str)
-    class(version_t), intent(in) :: this
+    type(version_t), intent(in) :: this
     character(:), allocatable :: str
 
     integer :: i
@@ -264,7 +264,7 @@ contains
   !> Increments the major version number and resets the minor and patch number
   !> as well as the prerelease and build data.
   elemental subroutine increment_major(this)
-    class(version_t), intent(inout) :: this
+    type(version_t), intent(inout) :: this
 
     this%major = this%major + 1
     this%minor = 0
@@ -276,7 +276,7 @@ contains
 
   !> Increments the minor version number and resets patch, prerelease and build.
   elemental subroutine increment_minor(this)
-    class(version_t), intent(inout) :: this
+    type(version_t), intent(inout) :: this
 
     this%minor = this%minor + 1
     this%patch = 0
@@ -287,7 +287,7 @@ contains
 
   !> Increments the patch version number and resets prerelease and build.
   elemental subroutine increment_patch(this)
-    class(version_t), intent(inout) :: this
+    type(version_t), intent(inout) :: this
 
     this%patch = this%patch + 1
 
@@ -297,7 +297,7 @@ contains
 
   !> Increment prerelease and reset build data.
   elemental subroutine increment_prerelease(this)
-    class(version_t), intent(inout) :: this
+    type(version_t), intent(inout) :: this
 
     call increment_identifier(this%prerelease)
     if (allocated(this%build)) deallocate (this%build)
@@ -305,7 +305,7 @@ contains
 
   !> Increment build metadata.
   elemental subroutine increment_build(this)
-    class(version_t), intent(inout) :: this
+    type(version_t), intent(inout) :: this
 
     call increment_identifier(this%build)
   end
@@ -316,11 +316,24 @@ contains
   pure subroutine increment_identifier(ids)
     type(string_t), allocatable, intent(inout) :: ids(:)
 
+    type(string_t), allocatable :: tmp(:)
+    integer :: i
+
     if (allocated(ids)) then
       if (ids(size(ids))%is_numeric()) then
-        ids = [ids(1:size(ids) - 1), string_t(trim(int2s(ids(size(ids))%num() + 1)))]
+        allocate (tmp(size(ids)))
+        do i = 1, size(ids) - 1
+          tmp(i) = ids(i)
+        end do
+        tmp(size(tmp)) = string_t(trim(int2s(ids(size(ids))%num() + 1)))
+        call move_alloc(tmp, ids)
       else
-        ids = [ids, string_t('1')]
+        allocate (tmp(size(ids) + 1))
+        do i = 1, size(ids)
+          tmp(i) = ids(i)
+        end do
+        tmp(size(tmp)) = string_t('1')
+        call move_alloc(tmp, ids)
       end if
     else
       allocate (ids(1))
@@ -351,7 +364,7 @@ contains
   !> data. In strict mode, all major, minor and patch versions must be provided.
   !> Implicit zeros are forbidden in strict mode.
   subroutine try_parse(this, string, error, strict_mode)
-    class(version_t), intent(out) :: this
+    type(version_t), intent(out) :: this
     character(*), intent(in) :: string
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
@@ -482,7 +495,7 @@ contains
 
   !> Convert a `string_t` to an integer.
   elemental integer function string_t_2i(this)
-    class(string_t), intent(in) :: this
+    type(string_t), intent(in) :: this
 
     type(error_t), allocatable :: e
 
@@ -519,7 +532,7 @@ contains
 
     character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
     character(:), allocatable :: string
-    integer :: i
+    integer :: i, n, j, start
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
@@ -536,24 +549,27 @@ contains
       error = error_t('Identifier must not end with a dot.'); return
     end if
 
+    ! Count identifiers.
+    n = 1
+    do i = 1, len(str)
+      if (str(i:i) == '.') n = n + 1
+    end do
+
+    allocate (ids(n))
     string = str
-    allocate (ids(0))
-
-    do
-      i = index(string, '.')
-
-      ! No dots (left), record last identifier and return.
+    start = 1
+    do j = 1, n
+      i = index(string(start:), '.')
       if (i == 0) then
-        call validate_identifier(string, error)
+        call validate_identifier(string(start:), error)
         if (allocated(error)) return
-        ids = [ids, string_t(string)]; return
+        ids(j)%str = string(start:)
+        exit
       end if
-
-      ! Validate and record identifier, then shorten string.
-      call validate_identifier(string(1:i - 1), error)
+      call validate_identifier(string(start:start + i - 2), error)
       if (allocated(error)) return
-      ids = [ids, string_t(string(1:i - 1))]
-      string = string(i + 1:len(string))
+      ids(j)%str = string(start:start + i - 2)
+      start = start + i
     end do
   end
 
@@ -588,7 +604,7 @@ contains
 
   !> Check if string_t is purely numeric.
   elemental function string_t_is_numeric(this)
-    class(string_t), intent(in) :: this
+    type(string_t), intent(in) :: this
     logical :: string_t_is_numeric
 
     string_t_is_numeric = verify(this%str, '0123456789') == 0
@@ -596,8 +612,8 @@ contains
 
   !> Check two versions for equality.
   elemental logical function equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     integer :: i
 
@@ -623,16 +639,16 @@ contains
 
   !> Check two versions for inequality.
   elemental logical function not_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     not_equals = .not. lhs == rhs
   end
 
   !> Check if the first version is greater than the second.
   elemental logical function greater_than(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     greater_than = lhs%major > rhs%major &
     & .or. (lhs%major == rhs%major &
@@ -656,24 +672,24 @@ contains
 
   !> Check if the first version is smaller than the second.
   elemental logical function less_than(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     less_than = .not. lhs > rhs .and. .not. lhs == rhs
   end
 
   !> Check if the first version is greater than or equal to the second.
   elemental logical function greater_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     greater_equals = lhs > rhs .or. lhs == rhs
   end
 
   !> Check if the first version is smaller than or equal to the second.
   elemental logical function less_equals(lhs, rhs)
-    class(version_t), intent(in) :: lhs
-    class(version_t), intent(in) :: rhs
+    type(version_t), intent(in) :: lhs
+    type(version_t), intent(in) :: rhs
 
     less_equals = .not. lhs > rhs
   end
@@ -712,7 +728,7 @@ contains
   !> This procedure has been added for conveniece. It is not part of the
   !> Semantic Versioning 2.0.0 specification.
   elemental logical function is_exactly(self, other)
-    class(version_t), intent(in) :: self
+    type(version_t), intent(in) :: self
     type(version_t), intent(in) :: other
 
     integer :: i
@@ -807,7 +823,7 @@ contains
   subroutine try_satisfy(this, string, is_satisfied, error)
 
     !> Version to be evaluated.
-    class(version_t), intent(in) :: this
+    type(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
@@ -845,7 +861,7 @@ contains
   logical function satisfies(this, str)
 
     !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: this
+    type(version_t), intent(in) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: str
@@ -862,7 +878,7 @@ contains
 
     !> Sets of comparators to be determined. They are separated by `||` if there
     !> are multiple sets.
-    class(version_range_t), intent(out) :: this
+    type(version_range_t), intent(out) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
@@ -896,7 +912,7 @@ contains
 
   !> Extend array of comparator sets within version range with another comparator.
   subroutine extend_comp_sets(range, comp_set)
-    class(version_range_t), intent(inout) :: range
+    type(version_range_t), intent(inout) :: range
     type(comparator_set_t), intent(in) :: comp_set
 
     type(comparator_set_t), allocatable :: tmp(:)
@@ -913,7 +929,7 @@ contains
 
     !> Set of comparators to be determined. They are separated by ` ` if there
     !> are multiple comparators.
-    class(comparator_set_t), intent(out) :: this
+    type(comparator_set_t), intent(out) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
@@ -970,7 +986,7 @@ contains
 
   !> Extend array of comparators within comparator set with another comparator.
   subroutine extend_comps(set, comp)
-    class(comparator_set_t), intent(inout) :: set
+    type(comparator_set_t), intent(inout) :: set
     type(comparator_t), intent(in) :: comp
 
     type(comparator_t), allocatable :: tmp(:)
@@ -986,7 +1002,7 @@ contains
   subroutine parse_comp_and_crop_str(comp, op, str, error)
 
     !> Comparator to be determined.
-    class(comparator_t), intent(out) :: comp
+    type(comparator_t), intent(out) :: comp
 
     !> The operator of the comparator.
     character(*), intent(in) :: op
@@ -1039,7 +1055,7 @@ contains
   pure subroutine satisfies_comp_set(version, comp_set, is_satisfied, error)
 
     !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: version
+    type(version_t), intent(in) :: version
 
     !> Set of comparators to be evaluated.
     type(comparator_set_t), intent(in) :: comp_set
@@ -1051,6 +1067,8 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i
+
+    is_satisfied = .false.
 
     if (size(comp_set%comps) == 0) then
       error = error_t('Comparator set cannot be empty.'); return
@@ -1067,7 +1085,7 @@ contains
   pure subroutine satisfies_comp(this, comparator, is_satisfied, error)
 
     !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: this
+    type(version_t), intent(in) :: this
 
     !> Comparator to be evaluated.
     type(comparator_t), intent(in) :: comparator
@@ -1077,6 +1095,8 @@ contains
 
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
+
+    is_satisfied = .false.
 
     if (comparator%op == '>') then
       is_satisfied = this > comparator%version
@@ -1129,7 +1149,7 @@ contains
   elemental logical function is_stable(version)
 
     !> Instance of `version_t` to be evaluated.
-    class(version_t), intent(in) :: version
+    type(version_t), intent(in) :: version
 
     is_stable = version%major > 0 .and. .not. allocated(version%prerelease)
   end
