@@ -459,7 +459,7 @@ program test
   call v1%create(1, build='abc', error=e)
   call v2%create(1, build='abc', error=e)
   if (.not. v1 == v2) call fail('Equality failed.')
-  if (v1 /= v2) call fail('InequalityInequality failed.')
+  if (v1 /= v2) call fail('Inequality failed.')
   if (v1 < v2) call fail('Less than failed.')
   if (v1 > v2) call fail('Greater than failed.')
   if (.not. v1 <= v2) call fail('Less than or equal failed.')

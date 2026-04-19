@@ -188,6 +188,10 @@ contains
       is_strict_mode = .false.
     end if
 
+    this%major = 0
+    this%minor = 0
+    this%patch = 0
+
     if (major < 0) then
       error = error_t('Version numbers must not be negative.'); return
     end if
@@ -355,6 +359,10 @@ contains
     integer :: i, j
     character(:), allocatable :: str
 
+    this%major = 0
+    this%minor = 0
+    this%patch = 0
+
     str = trim(adjustl(string))
 
     i = index(str, '-')
@@ -509,7 +517,7 @@ contains
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
-    character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
+    character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
     character(:), allocatable :: string
     integer :: i
 
@@ -814,6 +822,7 @@ contains
     type(version_range_t) :: version_range
     integer :: i
 
+    is_satisfied = .false.
     str = trim(adjustl(string))
 
     if (len(str) == 0) then
