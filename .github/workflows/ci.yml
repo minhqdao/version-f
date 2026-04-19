@@ -26,6 +26,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Cache fpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/fpm
+          key: ${{ runner.os }}-fpm-v5
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:

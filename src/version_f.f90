@@ -6,7 +6,7 @@ module version_f
   private
 
   public :: version_t, string_t, error_t, is_version, version_range_t, &
-            comparator_set_t, comparator_t, operator_index
+            comparator_set_t, comparator_t, operator_index, sort_versions
 
   type :: string_t
     character(:), allocatable :: str
@@ -233,12 +233,11 @@ contains
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
-
+    character(32) :: mmp_buf
     integer :: i
 
-    str = trim(int2s(this%major))//'.' &
-    &   //trim(int2s(this%minor))//'.' &
-    &   //trim(int2s(this%patch))
+    write (mmp_buf, '(I0, ".", I0, ".", I0)') this%major, this%minor, this%patch
+    str = trim(mmp_buf)
 
     if (allocated(this%prerelease)) then
       str = str//'-'
@@ -455,7 +454,7 @@ contains
     do i = 1, len(str)
       c = str(i:i)
       if (c >= '0' .and. c <= '9') then
-        num = num*10 + index('0123456789', c) - 1
+        num = num*10 + (iachar(c) - iachar('0'))
       else
         error = error_t("Contains non-digit: '"//str//"'."); return
       end if
@@ -486,20 +485,9 @@ contains
   pure function int2s(num) result(str)
     integer, intent(in) :: num
     character(:), allocatable :: str
-
-    integer :: digits, tmp
-
-    tmp = num
-    digits = 0
-
-    do
-      digits = digits + 1
-      tmp = tmp/10
-      if (tmp == 0) exit
-    end do
-
-    allocate (character(digits) :: str)
-    write (str, '(I0)') num
+    character(32) :: buffer
+    write (buffer, '(I0)') num
+    str = trim(buffer)
   end
 
   !> Check for valid prerelease or build data and build identfiers from
@@ -675,7 +663,7 @@ contains
     type(string_t), intent(in) :: lhs(:)
     type(string_t), intent(in) :: rhs(:)
 
-    integer :: i, j
+    integer :: i
 
     do i = 1, min(size(lhs), size(rhs))
       if (lhs(i)%str == rhs(i)%str) cycle
@@ -685,15 +673,8 @@ contains
         is_greater = .false.; return
       else if (rhs(i)%is_numeric()) then
         is_greater = .true.; return
-      end if
-
-      do j = 1, min(len(lhs(i)%str), len(rhs(i)%str))
-        if (lhs(i)%str(j:j) == rhs(i)%str(j:j)) cycle
-        is_greater = lhs(i)%str(j:j) > rhs(i)%str(j:j); return
-      end do
-
-      if (len(lhs(i)%str) /= len(rhs(i)%str)) then
-        is_greater = len(lhs(i)%str) > len(rhs(i)%str); return
+      else
+        is_greater = lhs(i)%str > rhs(i)%str; return
       end if
     end do
 
@@ -848,7 +829,7 @@ contains
   end
 
   !> Create sets of comparators that are separated by `||`. An example of a
-  !> version range is `4.2.3 || 5.0.0 - 7.2.3`.
+  !> version range is `4.2.3 || >=5.0.0 <7.2.3`.
   subroutine parse_version_range(this, string, error)
 
     !> Sets of comparators to be determined. They are separated by `||` if there
@@ -944,6 +925,16 @@ contains
         end if
       else if (str(1:1) == '=') then
         call comp%parse_comp_and_crop_str('=', str, error)
+      else if (str(1:1) == '^') then
+        call parse_caret_range(this, str, error)
+        if (allocated(error) .or. str == '') return
+        str = trim(adjustl(str))
+        cycle
+      else if (str(1:1) == '~') then
+        call parse_tilde_range(this, str, error)
+        if (allocated(error) .or. str == '') return
+        str = trim(adjustl(str))
+        cycle
       else if (len(str) == 1) then
         call comp%parse_comp_and_crop_str('', str, error)
       else if (str(1:2) == '!=') then
@@ -1004,24 +995,95 @@ contains
     if (allocated(error)) return
   end
 
-  !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
+  !> Index of the first operator (`>`, `<`, `!`, `=`, `^`, `~` or ` `) within a string.
   elemental integer function operator_index(str)
 
     !> Input string to be evaluated.
     character(*), intent(in) :: str
 
-    integer :: i
-    character :: char
-
-    do i = 1, len(str)
-      char = str(i:i)
-      if (char == '>' .or. char == '<' .or. char == '!' .or. char == '=' .or. char == ' ') then
-        operator_index = i; return
-      end if
-    end do
-
-    operator_index = 0
+    operator_index = scan(str, '><!=^~ ')
   end
+
+  !> Parse a caret range and extend the comparator set.
+  !> ^1.2.3 := >=1.2.3 <2.0.0
+  !> ^0.2.3 := >=0.2.3 <0.3.0
+  !> ^0.0.3 := >=0.0.3 <0.0.4
+  subroutine parse_caret_range(set, str, error)
+    class(comparator_set_t), intent(inout) :: set
+    character(*), intent(inout) :: str
+    type(error_t), allocatable, intent(out) :: error
+    type(version_t) :: v, upper_v
+    integer :: i
+
+    str = trim(adjustl(str(2:)))
+    i = operator_index(str)
+    if (i == 0) then
+      call v%parse(str, error)
+      str = ''
+    else
+      call v%parse(str(:i - 1), error)
+      str = str(i:)
+    end if
+    if (allocated(error)) return
+
+    call set%extend_with(create_comp('>=', v))
+
+    if (v%major > 0) then
+      upper_v = version_t(v%major + 1, 0, 0)
+    else if (v%minor > 0) then
+      upper_v = version_t(0, v%minor + 1, 0)
+    else
+      upper_v = version_t(0, 0, v%patch + 1)
+    end if
+    call set%extend_with(create_comp('<', upper_v))
+  end subroutine parse_caret_range
+
+  !> Parse a tilde range and extend the comparator set.
+  !> ~1.2.3 := >=1.2.3 <1.3.0
+  !> ~1.2   := >=1.2.0 <1.3.0
+  !> ~1     := >=1.0.0 <2.0.0
+  subroutine parse_tilde_range(set, str, error)
+    class(comparator_set_t), intent(inout) :: set
+    character(*), intent(inout) :: str
+    type(error_t), allocatable, intent(out) :: error
+    type(version_t) :: v, upper_v
+    integer :: i, dots
+
+    dots = count_dots(str(2:))
+    str = trim(adjustl(str(2:)))
+    i = operator_index(str)
+    if (i == 0) then
+      call v%parse(str, error)
+      str = ''
+    else
+      call v%parse(str(:i - 1), error)
+      str = str(i:)
+    end if
+    if (allocated(error)) return
+
+    call set%extend_with(create_comp('>=', v))
+
+    if (dots >= 1) then
+      upper_v = version_t(v%major, v%minor + 1, 0)
+    else
+      upper_v = version_t(v%major + 1, 0, 0)
+    end if
+    call set%extend_with(create_comp('<', upper_v))
+  end subroutine parse_tilde_range
+
+  !> Count the number of dots in the major.minor.patch part of the string.
+  pure integer function count_dots(str)
+    character(*), intent(in) :: str
+    integer :: i, j
+
+    count_dots = 0
+    j = scan(str, '-+')
+    if (j == 0) j = len(str) + 1
+
+    do i = 1, j - 1
+      if (str(i:i) == '.') count_dots = count_dots + 1
+    end do
+  end function count_dots
 
   !> Attempt to evaluate a comparator set. A comparator set consists of multiple
   !> comparators that are separated by ` `. An example of a comparator set is
@@ -1124,4 +1186,22 @@ contains
 
     is_stable = version%major > 0 .and. .not. allocated(version%prerelease)
   end
+
+  !> Sort an array of versions in place using a simple bubble sort.
+  subroutine sort_versions(versions)
+    type(version_t), intent(inout) :: versions(:)
+    type(version_t) :: tmp
+    integer :: i, j, n
+
+    n = size(versions)
+    do i = 1, n - 1
+      do j = 1, n - i
+        if (versions(j) > versions(j + 1)) then
+          tmp = versions(j)
+          versions(j) = versions(j + 1)
+          versions(j + 1) = tmp
+        end if
+      end do
+    end do
+  end subroutine sort_versions
 end

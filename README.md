@@ -162,6 +162,8 @@ Use the `satisfies`/`try_satisfy` procedures to verify whether a version meets a
 - `>=`: Greater than or equal to
 - `<`: Less than
 - `<=`: Less than or equal to
+- `^`: Caret range (e.g., `^1.2.3` := `>=1.2.3 <2.0.0`)
+- `~`: Tilde range (e.g., `~1.2.3` := `>=1.2.3 <1.3.0`)
 
 ```fortran
 program main
@@ -184,6 +186,8 @@ program main
   print *, version%satisfies('>0.1.0 <0.2.0') ! false
   print *, version%satisfies('>0.1.0 <0.2.0 || 0.1.0') ! true
   print *, version%satisfies('0.0.8 || 0.0.9 || >0.1.0 <0.2.0') ! false
+  print *, version%satisfies('^0.1.0') ! true
+  print *, version%satisfies('~0.1.0') ! true
 
   call version%try_satisfy('<=0.1.0', is_satisfied, error)
   if (allocated(error)) call exit(1)
@@ -236,6 +240,17 @@ a valid version. Use `parse` to receive detailed error messages.
 ```fortran
 print *, is_version('0.1.0-alpha.1') ! true
 print *, is_version('abc') ! false
+```
+
+## sort_versions()
+
+The `sort_versions()` subroutine sorts an array of `version_t` in place.
+
+```fortran
+type(version_t) :: versions(3)
+versions = [version_t('2.0.0'), version_t('0.1.0'), version_t('1.0.0')]
+call sort_versions(versions)
+! versions is now [0.1.0, 1.0.0, 2.0.0]
 ```
 
 ## is_stable()

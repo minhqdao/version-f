@@ -1179,6 +1179,48 @@ program test
   if (v1%satisfies('>0.0.99 <0.1.0 || >0.1.0')) call fail('satisfies-9 should fail.')
   if (.not. v1%satisfies('<0.0.1 || >0.1.0-123')) call fail('satisfies-10 should not fail.')
 
+  v1 = version_t('1.2.3')
+  if (.not. v1%satisfies('^1.2.3')) call fail('caret-1 failed')
+  if (.not. v1%satisfies('^1.2.0')) call fail('caret-2 failed')
+  if (.not. v1%satisfies('^1.0.0')) call fail('caret-3 failed')
+  if (v1%satisfies('^2.0.0')) call fail('caret-4 failed')
+
+  v1 = version_t('0.2.3')
+  if (.not. v1%satisfies('^0.2.3')) call fail('caret-5 failed')
+  if (v1%satisfies('^0.3.0')) call fail('caret-6 failed')
+
+  v1 = version_t('0.0.3')
+  if (.not. v1%satisfies('^0.0.3')) call fail('caret-7 failed')
+  if (v1%satisfies('^0.0.4')) call fail('caret-8 failed')
+
+  v1 = version_t('1.2.3')
+  if (.not. v1%satisfies('~1.2.3')) call fail('tilde-1 failed')
+  if (.not. v1%satisfies('~1.2.0')) call fail('tilde-2 failed')
+  if (v1%satisfies('~1.3.0')) call fail('tilde-3 failed')
+
+  v1 = version_t('1.2.3')
+  if (.not. v1%satisfies('~1')) call fail('tilde-4 failed')
+  if (v1%satisfies('~2')) call fail('tilde-5 failed')
+
+!#################################sort_versions################################!
+
+  block
+    type(version_t) :: versions(5)
+    versions(1) = version_t('2.0.0')
+    versions(2) = version_t('0.1.0')
+    versions(3) = version_t('1.0.0')
+    versions(4) = version_t('1.0.0-alpha')
+    versions(5) = version_t('1.0.0-beta')
+
+    call sort_versions(versions)
+
+    if (versions(1)%to_string() /= '0.1.0') call fail('Sort failed 1')
+    if (versions(2)%to_string() /= '1.0.0-alpha') call fail('Sort failed 2')
+    if (versions(3)%to_string() /= '1.0.0-beta') call fail('Sort failed 3')
+    if (versions(4)%to_string() /= '1.0.0') call fail('Sort failed 4')
+    if (versions(5)%to_string() /= '2.0.0') call fail('Sort failed 5')
+  end block
+
 !################################satisfies_comp################################!
 
   v1 = version_t(0, 1, 0)
