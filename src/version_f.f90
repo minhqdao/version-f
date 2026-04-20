@@ -233,7 +233,7 @@ contains
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
-    character(32) :: mmp_buf
+    character(64) :: mmp_buf
     integer :: i
 
     write (mmp_buf, '(I0, ".", I0, ".", I0)') this%major, this%minor, this%patch

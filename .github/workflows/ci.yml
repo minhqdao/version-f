@@ -17,8 +17,12 @@ jobs:
           - os: macos-13
             toolchain: { compiler: intel-classic, version: "2021.12" }
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             toolchain: { compiler: nvidia-hpc, version: "23.11" }
+          - os: ubuntu-22.04
+            toolchain: { compiler: intel, version: "2024.1" }
+          - os: ubuntu-22.04
+            toolchain: { compiler: intel-classic, version: "2021.12" }
           - os: macos-13
             toolchain: { compiler: intel-classic, version: "2021.10" }
           - os: windows-latest
@@ -26,11 +30,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Cache fpm
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/bin/fpm
-          key: ${{ runner.os }}-fpm-v5
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
@@ -74,13 +73,13 @@ jobs:
         toolchain:
           - { compiler: gcc, version: "13" }
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             toolchain: { compiler: intel, version: "2024.1" }
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             toolchain: { compiler: intel-classic, version: "2021.12" }
           - os: macos-latest
             toolchain: { compiler: intel-classic, version: "2021.10" }
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             toolchain: { compiler: nvidia-hpc, version: "23.11" }
     runs-on: ${{ matrix.os }}
     steps:
