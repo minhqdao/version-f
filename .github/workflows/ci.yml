@@ -25,7 +25,7 @@ jobs:
             toolchain: { compiler: gcc, version: "13" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
@@ -52,7 +52,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
@@ -79,7 +79,7 @@ jobs:
             toolchain: { compiler: nvidia-hpc, version: "23.11" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
@@ -91,7 +91,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
