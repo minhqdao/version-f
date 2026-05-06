@@ -64,10 +64,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: minhqdao/setup-fortran@v1
+        id: setup
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ steps.setup-fortran.outputs.version }}
+      - run: ${{ steps.setup.outputs.version }}
       - run: make test
 
   format:
