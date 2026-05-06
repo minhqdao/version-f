@@ -19,8 +19,6 @@ jobs:
         include:
           - os: ubuntu-latest
             toolchain: { compiler: nvfortran }
-          - os: ubuntu-24.04-arm
-            toolchain: { compiler: nvfortran }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}

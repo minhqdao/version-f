@@ -312,12 +312,21 @@ contains
   pure subroutine increment_identifier(ids)
     type(string_t), allocatable, intent(inout) :: ids(:)
 
+    type(string_t), allocatable :: tmp(:)
+    integer :: n
+
     if (allocated(ids)) then
-      if (ids(size(ids))%is_numeric()) then
-        ids = [ids(1:size(ids) - 1), string_t(trim(int2s(ids(size(ids))%num() + 1)))]
+      n = size(ids)
+      if (ids(n)%is_numeric()) then
+        allocate (tmp(n))
+        tmp(1:n - 1) = ids(1:n - 1)
+        tmp(n)%str = trim(int2s(ids(n)%num() + 1))
       else
-        ids = [ids, string_t('1')]
+        allocate (tmp(n + 1))
+        tmp(1:n) = ids(1:n)
+        tmp(n + 1)%str = '1'
       end if
+      ids = tmp
     else
       allocate (ids(1))
       ids(1)%str = '1'
@@ -502,16 +511,16 @@ contains
     write (str, '(I0)') num
   end
 
-  !> Check for valid prerelease or build data and build identfiers from
+  !> Check for valid prerelease or build data and build identifiers from
   !> the string.
   pure subroutine build_identifiers(ids, str, error)
     type(string_t), allocatable, intent(out) :: ids(:)
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
-    character(*), parameter :: valid_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
-    character(:), allocatable :: string
-    integer :: i
+    character(*), parameter :: valid_chars = &
+    & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
+    integer :: i, n, start, length
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
@@ -528,24 +537,29 @@ contains
       error = error_t('Identifier must not end with a dot.'); return
     end if
 
-    string = str
-    allocate (ids(0))
+    ! Count identifiers
+    n = 1
+    do i = 1, len(str)
+      if (str(i:i) == '.') n = n + 1
+    end do
 
-    do
-      i = index(string, '.')
+    allocate (ids(n))
 
-      ! No dots (left), record last identifier and return.
-      if (i == 0) then
-        call validate_identifier(string, error)
+    start = 1
+    do i = 1, n
+      length = index(str(start:), '.')
+      if (length == 0) then
+        ! Last identifier
+        call validate_identifier(str(start:), error)
         if (allocated(error)) return
-        ids = [ids, string_t(string)]; return
+        ids(i)%str = str(start:)
+      else
+        ! Not the last one
+        call validate_identifier(str(start:start + length - 2), error)
+        if (allocated(error)) return
+        ids(i)%str = str(start:start + length - 2)
+        start = start + length
       end if
-
-      ! Validate and record identifier, then shorten string.
-      call validate_identifier(string(1:i - 1), error)
-      if (allocated(error)) return
-      ids = [ids, string_t(string(1:i - 1))]
-      string = string(i + 1:len(string))
     end do
   end
 
