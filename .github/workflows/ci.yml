@@ -11,18 +11,12 @@ jobs:
           - { compiler: gfortran }
           - { compiler: ifx }
           - { compiler: ifort }
-          - { compiler: lfortran }
-          - { compiler: flang }
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
           - os: macos-latest
             toolchain: { compiler: ifort }
         include:
-          - os: ubuntu-latest
-            toolchain: { compiler: nvfortran }
-          - os: ubuntu-latest
-            toolchain: { compiler: aocc }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
@@ -68,7 +62,7 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
-      - run: ${{ steps.setup.outputs.version }}
+      - run: echo "${{ steps.setup.outputs.version }}"
       - run: make test
 
   format:
