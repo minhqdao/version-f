@@ -17,6 +17,12 @@ jobs:
           - os: macos-latest
             toolchain: { compiler: ifort }
         include:
+          - os: ubuntu-latest
+            toolchain: { compiler: nvfortran }
+          - os: ubuntu-latest
+            toolchain: { compiler: aocc }
+          - os: windows-11-arm
+            toolchain: { compiler: flang }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
