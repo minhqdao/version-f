@@ -52,7 +52,7 @@ $(STATIC): $(OBJS)
 
 $(SHARED): $(SRCS)
 	mkdir -p $(MODDIR)
-	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $<
+	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $^
 
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
