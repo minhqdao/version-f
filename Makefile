@@ -15,8 +15,6 @@ ifeq ($(shell uname), Linux)
 	LDFLAGS := -Wl,-rpath=.
 else ifeq ($(shell uname), Darwin)
 	SHARED := lib$(NAME).dylib
-else ifeq ($(OS),Windows_NT)
-	LDFLAGS += -Wl,--export-all-symbols
 endif
 
 SRCDIR := src
@@ -54,7 +52,7 @@ $(STATIC): $(OBJS)
 
 $(SHARED): $(SRCS)
 	mkdir -p $(MODDIR)
-	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $^ $(LDFLAGS)
+	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $<
 
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
@@ -72,7 +70,7 @@ $(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 test: $(EXESSTATIC) $(EXESSHARED)
-	@$(foreach f,$^,$(f) &&) echo "All tests passed!"
+	@for f in $^; do $$f; done
 
 clean:
 	rm -rf $(BUILDDIR)
