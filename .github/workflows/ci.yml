@@ -19,10 +19,8 @@ jobs:
         include:
           - os: ubuntu-latest
             toolchain: { compiler: nvfortran }
-          - os: ubuntu-latest
-            toolchain: { compiler: aocc }
-          - os: windows-11-arm
-            toolchain: { compiler: flang }
+          - os: ubuntu-24.04-arm
+            toolchain: { compiler: nvfortran }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
@@ -58,8 +56,14 @@ jobs:
             toolchain: { compiler: nvfortran }
           - os: ubuntu-latest
             toolchain: { compiler: aocc }
+          - os: ubuntu-24.04-arm
+            toolchain: { compiler: nvfortran }
+          - os: macos-26-intel
+            toolchain: { compiler: ifort }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
+          - os: windows-11-arm
+            toolchain: { compiler: flang }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
