@@ -2,7 +2,7 @@
 .SUFFIXES:
 .PHONY: all static shared test clean
 
-FC := gfortran
+FC :?= gfortran
 FFLAGS := -O2
 AR := ar
 ARFLAGS := rcs
