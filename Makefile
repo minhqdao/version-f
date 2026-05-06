@@ -70,7 +70,7 @@ $(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 test: $(EXESSTATIC) $(EXESSHARED)
-    @for f in $^; do PATH=".:$$PATH" ./$$f; done
+	@for f in $^; do PATH=".:$$PATH" ./$$f; done
 
 clean:
 	rm -rf $(BUILDDIR)
