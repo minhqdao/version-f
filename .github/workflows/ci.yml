@@ -24,7 +24,7 @@ jobs:
           - os: ubuntu-latest
             toolchain: { compiler: aocc }
           - os: windows-latest
-            toolchain: { windowsEnv: ucrt64 }
+            toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -59,7 +59,7 @@ jobs:
           - os: ubuntu-latest
             toolchain: { compiler: aocc }
           - os: windows-latest
-            toolchain: { windowsEnv: ucrt64 }
+            toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
