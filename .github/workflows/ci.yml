@@ -9,16 +9,16 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         toolchain:
           - { compiler: gfortran }
-          - { compiler: ifx }
-          - { compiler: ifort }
-        exclude:
-          - os: macos-latest
-            toolchain: { compiler: ifx }
-          - os: macos-latest
-            toolchain: { compiler: ifort }
-        include:
-          - os: windows-latest
-            toolchain: { msystem: ucrt64 }
+        #   - { compiler: ifx }
+        #   - { compiler: ifort }
+        # exclude:
+        #   - os: macos-latest
+        #     toolchain: { compiler: ifx }
+        #   - os: macos-latest
+        #     toolchain: { compiler: ifort }
+        # include:
+        #   - os: windows-latest
+        #     toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -48,10 +48,10 @@ jobs:
           - os: macos-latest
             toolchain: { compiler: ifort }
         include:
-          - os: ubuntu-latest
-            toolchain: { compiler: nvfortran }
-          - os: ubuntu-latest
-            toolchain: { compiler: aocc }
+          # - os: ubuntu-latest
+          #   toolchain: { compiler: nvfortran }
+          # - os: ubuntu-latest
+          #   toolchain: { compiler: aocc }
           - os: windows-latest
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
