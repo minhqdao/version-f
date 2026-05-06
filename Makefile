@@ -31,12 +31,15 @@ EXESRCS := $(foreach dir,$(TESTDIR) $(EXMPLDIR),$(wildcard $(dir)/*.f90))
 EXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXESRCS)))
 EXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXESRCS)))
 
-ifneq (,$(findstring gfortran,$(FC)))
-	MODIN := -I$(MODDIR)
+ifneq (,$(findstring gfortran,$(FC))$(findstring lfortran,$(FC)))
+	MODIN  := -I$(MODDIR)
 	MODOUT := -J$(MODDIR)
+else ifneq (,$(findstring flang,$(FC)))
+	MODIN  := -I$(MODDIR)
+	MODOUT := -module-dir $(MODDIR)
 else
-	MODIN := -module $(MODDIR)
-	MODOUT := $(MODIN)
+	MODIN  := -I$(MODDIR)
+	MODOUT := -module $(MODDIR)
 endif
 
 all: $(STATIC) $(SHARED)
