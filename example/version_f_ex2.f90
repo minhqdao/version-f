@@ -10,6 +10,7 @@ program ex2
   type(version_t), allocatable :: greater_versions(:)
   integer :: i
 
+  allocate (all_versions(0))
   call load_versions(all_versions)
 
   allocate (smaller_versions(0))
