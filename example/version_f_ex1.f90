@@ -15,7 +15,7 @@ program ex1
   type(version_t) :: highest_version
   integer :: i
 
-  allocate(loaded_boxes(0))
+  allocate (loaded_boxes(0))
   call load_boxes(loaded_boxes)
 
   ! Create and register versions
