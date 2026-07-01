@@ -23,7 +23,7 @@ jobs:
             toolchain: { msystem: ucrt64 }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: minhqdao/setup-fortran@v1
         with:
           compiler: ${{ matrix.toolchain.compiler }}
@@ -64,7 +64,7 @@ jobs:
             toolchain: { compiler: flang }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: minhqdao/setup-fortran@v1
         id: setup
         with:
@@ -76,7 +76,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
