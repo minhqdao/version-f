@@ -116,6 +116,21 @@ program test
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
 
+  v1 = version_t(1, 0, 0, 'RC-X', 'build-X')
+  if (v1%to_string() /= '1.0.0-RC-X+build-X') then
+    call fail("Uppercase X failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 0, 0, 'X', 'X')
+  if (v1%to_string() /= '1.0.0-X+X') then
+    call fail("Single uppercase X failed for '"//v1%to_string()//"'")
+  end if
+
+  v1 = version_t(1, 0, 0, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+  if (v1%to_string() /= '1.0.0-ABCDEFGHIJKLMNOPQRSTUVWXYZ') then
+    call fail("Full uppercase alphabet failed for '"//v1%to_string()//"'")
+  end if
+
   call v1%create(1, prerelease='d', build='9.0', error=e)
   if (.not. allocated(e)) call fail('Invalid build missed.')
 
@@ -390,6 +405,13 @@ program test
 
   call v1%parse('1-irh+.ife..oihie', e)
   if (.not. allocated(e)) call fail('Leading dot.')
+
+  call v1%parse('1.0.0-RC-X+build-X', e)
+  if (allocated(e)) then
+    call fail(e%msg)
+  else if (v1%to_string() /= '1.0.0-RC-X+build-X') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
 
 !################################## Compare ###################################!
 
@@ -759,6 +781,9 @@ program test
   if (.not. is_version('7.49-a')) call fail("'7.49-a' is a version.")
   if (.not. is_version('7.49-a')) call fail("'7.49-a' is a version.")
   if (.not. is_version('7.49-a+12.a')) call fail("'7.49-a+12.a' is a version.")
+
+  if (.not. is_version('1.0.0-RC-X+build-X')) call fail("'1.0.0-RC-X+build-X' is a version.")
+  if (.not. is_version('1.0.0-X')) call fail("'1.0.0-X' is a version.")
 
   !############################### is_exactly #################################!
 
