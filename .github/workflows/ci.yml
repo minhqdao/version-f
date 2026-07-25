@@ -6,6 +6,7 @@ on:
 
 jobs:
   fpm-test:
+    name: fpm / ${{ matrix.os }} / ${{ matrix.toolchain.compiler }}
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +45,7 @@ jobs:
       - run: fpm test ${{ matrix.toolchain.fpm_flags }}
 
   make-test:
+    name: Make / ${{ matrix.os }} / ${{ matrix.toolchain.compiler }}
     strategy:
       fail-fast: false
       matrix:
@@ -101,18 +103,19 @@ jobs:
       - run: make test ${{ matrix.toolchain.make_flags }}
 
   cmake-test:
+    name: CMake / ${{ matrix.os }} / ${{ matrix.linkage }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            shared: "OFF"
+            linkage: static
           - os: ubuntu-latest
-            shared: "ON"
+            linkage: shared
           - os: macos-latest
-            shared: "OFF"
+            linkage: static
           - os: windows-latest
-            shared: "OFF"
+            linkage: static
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -120,7 +123,7 @@ jobs:
         with:
           compiler: gfortran
       - name: Configure
-        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
       - run: cmake --build build/cmake --config Release --parallel
       - run: ctest --test-dir build/cmake -C Release --output-on-failure
       - name: Install
