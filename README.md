@@ -229,6 +229,17 @@ call version%increment_minor() ! 0.6.0
 call version%increment_major() ! 1.0.0
 ```
 
+The `increment_*` procedures stop with an error if the value cannot be
+incremented without integer overflow. Use the corresponding `try_increment_*`
+procedure to handle the error instead:
+
+```fortran
+type(error_t), allocatable :: error
+
+call version%try_increment_major(error)
+if (allocated(error)) print *, error%msg
+```
+
 ## is_version()
 
 The `is_version()` function can be used to conveniently check if the string is

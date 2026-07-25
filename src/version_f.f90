@@ -38,7 +38,9 @@ module version_f
   contains
 
     procedure :: to_string, increment_major, increment_minor, increment_patch, &
-    & increment_prerelease, increment_build, is_exactly, satisfies, try_satisfy, &
+    & increment_prerelease, increment_build, try_increment_major, &
+    & try_increment_minor, try_increment_patch, try_increment_prerelease, &
+    & try_increment_build, is_exactly, satisfies, try_satisfy, &
     & satisfies_comp_set, satisfies_comp, is_stable
 
     generic :: create => try_create
@@ -302,71 +304,153 @@ contains
   end
 
   !> Increments the major version number and resets the minor and patch number
-  !> as well as the prerelease and build data.
+  !> as well as the prerelease and build data. Reports an error and leaves the
+  !> version unchanged if the major number cannot be incremented without
+  !> overflowing.
   elemental subroutine increment_major(this)
     class(version_t), intent(inout) :: this
 
+    type(error_t), allocatable :: error
+
+    call this%try_increment_major(error)
+    if (allocated(error)) error stop error%msg
+  end
+
+  !> Attempt to increment the major version, reporting overflow through `error`.
+  pure subroutine try_increment_major(this, error)
+    class(version_t), intent(inout) :: this
+    type(error_t), allocatable, intent(out) :: error
+
+    if (this%major == huge(this%major)) then
+      error = error_t('Major version cannot be incremented without overflowing.'); return
+    end if
     this%major = this%major + 1
     this%minor = 0
     this%patch = 0
-
     if (allocated(this%prerelease)) deallocate (this%prerelease)
     if (allocated(this%build)) deallocate (this%build)
   end
 
   !> Increments the minor version number and resets patch, prerelease and build.
+  !> Reports an error and leaves the version unchanged if the minor number would
+  !> overflow.
   elemental subroutine increment_minor(this)
     class(version_t), intent(inout) :: this
 
+    type(error_t), allocatable :: error
+
+    call this%try_increment_minor(error)
+    if (allocated(error)) error stop error%msg
+  end
+
+  !> Attempt to increment the minor version, reporting overflow through `error`.
+  pure subroutine try_increment_minor(this, error)
+    class(version_t), intent(inout) :: this
+    type(error_t), allocatable, intent(out) :: error
+
+    if (this%minor == huge(this%minor)) then
+      error = error_t('Minor version cannot be incremented without overflowing.'); return
+    end if
     this%minor = this%minor + 1
     this%patch = 0
-
     if (allocated(this%prerelease)) deallocate (this%prerelease)
     if (allocated(this%build)) deallocate (this%build)
   end
 
-  !> Increments the patch version number and resets prerelease and build.
+  !> Increments the patch version number and resets prerelease and build. Reports
+  !> an error and leaves the version unchanged if the patch number would overflow.
   elemental subroutine increment_patch(this)
     class(version_t), intent(inout) :: this
 
-    this%patch = this%patch + 1
+    type(error_t), allocatable :: error
 
+    call this%try_increment_patch(error)
+    if (allocated(error)) error stop error%msg
+  end
+
+  !> Attempt to increment the patch version, reporting overflow through `error`.
+  pure subroutine try_increment_patch(this, error)
+    class(version_t), intent(inout) :: this
+    type(error_t), allocatable, intent(out) :: error
+
+    if (this%patch == huge(this%patch)) then
+      error = error_t('Patch version cannot be incremented without overflowing.'); return
+    end if
+    this%patch = this%patch + 1
     if (allocated(this%prerelease)) deallocate (this%prerelease)
     if (allocated(this%build)) deallocate (this%build)
   end
 
-  !> Increment prerelease and reset build data.
+  !> Increment prerelease and reset build data. Reports an error and leaves the
+  !> version unchanged if the final numeric prerelease identifier would overflow.
   elemental subroutine increment_prerelease(this)
     class(version_t), intent(inout) :: this
 
-    call increment_identifier(this%prerelease)
+    type(error_t), allocatable :: error
+
+    call this%try_increment_prerelease(error)
+    if (allocated(error)) error stop error%msg
+  end
+
+  !> Attempt to increment prerelease data, reporting overflow through `error`.
+  pure subroutine try_increment_prerelease(this, error)
+    class(version_t), intent(inout) :: this
+    type(error_t), allocatable, intent(out) :: error
+
+    logical :: incremented
+
+    call increment_identifier(this%prerelease, incremented)
+    if (.not. incremented) then
+      error = error_t('Prerelease identifier cannot be incremented without overflowing.'); return
+    end if
     if (allocated(this%build)) deallocate (this%build)
   end
 
-  !> Increment build metadata.
+  !> Increment build metadata. Reports an error and leaves the version unchanged
+  !> if the final numeric build identifier would overflow.
   elemental subroutine increment_build(this)
     class(version_t), intent(inout) :: this
 
-    call increment_identifier(this%build)
+    type(error_t), allocatable :: error
+
+    call this%try_increment_build(error)
+    if (allocated(error)) error stop error%msg
+  end
+
+  !> Attempt to increment build metadata, reporting overflow through `error`.
+  pure subroutine try_increment_build(this, error)
+    class(version_t), intent(inout) :: this
+    type(error_t), allocatable, intent(out) :: error
+
+    logical :: incremented
+
+    call increment_identifier(this%build, incremented)
+    if (.not. incremented) then
+      error = error_t('Build identifier cannot be incremented without overflowing.')
+    end if
   end
 
   !> Increment prerelease or build identifiers. If the last identifier is
   !> numeric, increment it by 1. Otherwise add a new identifier with the value
   !> 1.
-  pure subroutine increment_identifier(ids)
+  pure subroutine increment_identifier(ids, incremented)
     type(string_t), allocatable, intent(inout) :: ids(:)
+    logical, intent(out) :: incremented
 
     type(string_t), allocatable :: tmp(:)
     integer :: n, val
     type(error_t), allocatable :: e
+
+    incremented = .true.
 
     if (allocated(ids)) then
       n = size(ids)
       if (ids(n)%is_numeric()) then
         call s2int(ids(n)%str, val, e)
         if (allocated(e)) then
-          allocate (tmp(n))
-          tmp = ids
+          incremented = .false.; return
+        else if (val == huge(val)) then
+          incremented = .false.; return
         else
           allocate (tmp(n))
           tmp(1:n - 1) = ids(1:n - 1)

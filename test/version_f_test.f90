@@ -9,6 +9,7 @@ program test
   type(comparator_set_t) :: comp_set
   type(version_range_t) :: range
   type(error_t), allocatable :: e
+  character(32) :: huge_str
 
 !################################### Create ###################################!
 
@@ -154,6 +155,11 @@ program test
   if (v1%to_string() /= '2.25.47') then
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
+
+  v1 = version_t(1, 2, 3, 'alpha', 'build')
+  call v1%try_increment_patch(e)
+  if (allocated(e)) call fail('try_increment_patch should not report an error')
+  if (v1%to_string() /= '1.2.4') call fail('try_increment_patch failed')
 
   v1 = version_t(1, 2, 3)
   call v1%increment_prerelease()
@@ -1622,12 +1628,46 @@ program test
 
 !############################ increment_identifier overflow ####################!
 
+  v1 = version_t(huge(0), 2, 3, 'alpha', 'build')
+  v2 = v1
+  call v1%try_increment_major(e)
+  if (.not. allocated(e)) call fail('increment_major overflow should report an error')
+  if (.not. v1%is_exactly(v2)) call fail('increment_major overflow should leave the version unchanged')
+
+  v1 = version_t(1, huge(0), 3, 'alpha', 'build')
+  v2 = v1
+  call v1%try_increment_minor(e)
+  if (.not. allocated(e)) call fail('increment_minor overflow should report an error')
+  if (.not. v1%is_exactly(v2)) call fail('increment_minor overflow should leave the version unchanged')
+
+  v1 = version_t(1, 2, huge(0), 'alpha', 'build')
+  v2 = v1
+  call v1%try_increment_patch(e)
+  if (.not. allocated(e)) call fail('increment_patch overflow should report an error')
+  if (.not. v1%is_exactly(v2)) call fail('increment_patch overflow should leave the version unchanged')
+
+  write (huge_str, '(I0)') huge(0)
+
+  v1 = version_t(0, 0, 0, trim(huge_str), 'build')
+  v2 = v1
+  call v1%try_increment_prerelease(e)
+  if (.not. allocated(e)) call fail('increment_prerelease overflow should report an error')
+  if (.not. v1%is_exactly(v2)) call fail('increment_prerelease overflow should leave the version unchanged')
+
+  v1 = version_t(0, 0, 0, build=trim(huge_str))
+  v2 = v1
+  call v1%try_increment_build(e)
+  if (.not. allocated(e)) call fail('increment_build overflow should report an error')
+  if (.not. v1%is_exactly(v2)) call fail('increment_build overflow should leave the version unchanged')
+
   v1 = version_t(0, 0, 0, '99999999999')
-  call v1%increment_prerelease()
+  call v1%try_increment_prerelease(e)
+  if (.not. allocated(e)) call fail('Out-of-range prerelease increment should report an error')
   if (v1%to_string() /= '0.0.0-99999999999') call fail('increment_prerelease overflow should preserve ids')
 
   v1 = version_t(0, 0, 0, build='99999999999')
-  call v1%increment_build()
+  call v1%try_increment_build(e)
+  if (.not. allocated(e)) call fail('Out-of-range build increment should report an error')
   if (v1%to_string() /= '0.0.0+99999999999') call fail('increment_build overflow should keep unchanged')
 
 !###################### prerelease vs no-prerelease (same m.m.p) #############!
