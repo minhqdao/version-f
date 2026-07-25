@@ -10,6 +10,7 @@ program test
   type(version_range_t) :: range
   type(error_t), allocatable :: e
   type(string_t), allocatable :: identifiers(:)
+  character(:), allocatable :: long_input
   character(32) :: huge_str
 
 !################################### Create ###################################!
@@ -1783,6 +1784,74 @@ program test
   v1 = version_t(1, 0, 0, build='build')
   call v1%increment_prerelease()
   if (v1%to_string() /= '1.0.0-1') call fail('increment_prerelease on build-only should add prerelease')
+
+!############################ adversarial parsing #############################!
+
+  call v1%parse('1.0.0'//achar(9), e)
+  if (.not. allocated(e)) call fail('Trailing tab should not be accepted')
+
+  call v1%parse('1.0.0'//achar(10), e)
+  if (.not. allocated(e)) call fail('Trailing newline should not be accepted')
+
+  call v1%parse('1.'//achar(9)//'0.0', e)
+  if (.not. allocated(e)) call fail('Tab inside a version should not be accepted')
+
+  call v1%parse('1.0.0-alpha'//achar(128), e)
+  if (.not. allocated(e)) call fail('Non-ASCII identifier byte should not be accepted')
+
+  long_input = '1.0.0-'//repeat('a', 10000)
+  call v1%parse(long_input, e, strict_mode=.true.)
+  if (allocated(e)) call fail('Very long valid identifier should be accepted')
+  if (v1%to_string() /= long_input) call fail('Very long identifier did not round-trip')
+
+  long_input = repeat('9', 10000)//'.0.0'
+  call v1%parse(long_input, e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Huge major version should report an error')
+
+  call v1%parse('1.0.0-alpha..beta', e)
+  if (.not. allocated(e)) call fail('Repeated prerelease separator should not be accepted')
+
+  call v1%parse('1.0.0+build..meta', e)
+  if (.not. allocated(e)) call fail('Repeated build separator should not be accepted')
+
+  call v1%parse('1.0.0++build', e)
+  if (.not. allocated(e)) call fail('Repeated build marker should not be accepted')
+
+  call v1%try_satisfy('>', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Lone greater-than operator should report an error')
+
+  call v1%try_satisfy('<=', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Lone less-equals operator should report an error')
+
+  call v1%try_satisfy('!=', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Lone not-equals operator should report an error')
+
+  call v1%try_satisfy('!', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Lone exclamation mark should report an error')
+
+  call v1%try_satisfy('1.0.0 ||| 2.0.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Triple OR separator should report an error')
+
+  call v1%try_satisfy('1.0.0 || || 2.0.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Empty OR branch should report an error')
+
+  call v1%try_satisfy('1.0.0 | 2.0.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Single OR separator should report an error')
+
+  v1 = version_t(1, 5, 0)
+  call v1%try_satisfy('  >=  1.0.0  <  2.0.0  ||  =  3.0.0  ', is_satisfied, e)
+  if (allocated(e)) call fail('Whitespace at range token boundaries should be accepted')
+  if (.not. is_satisfied) call fail('Whitespace-separated comparator range should be satisfied')
+
+  call v1%try_satisfy('>=1.0.0||<2.0.0', is_satisfied, e)
+  if (allocated(e)) call fail('Range separators should not require surrounding whitespace')
+  if (.not. is_satisfied) call fail('Compact OR range should be satisfied')
+
+  call v1%try_satisfy('>=1.0.0'//achar(9)//'<2.0.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Tab-separated comparators should report an error')
+
+  call v1%try_satisfy('>=1.0.0'//achar(10)//'<2.0.0', is_satisfied, e)
+  if (.not. allocated(e)) call fail('Newline-separated comparators should report an error')
 
 !#################################final_message################################!
 
