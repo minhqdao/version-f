@@ -1,4 +1,5 @@
 program test
+  use iso_fortran_env, only: int64
   use version_f
 
   implicit none
@@ -7,8 +8,10 @@ program test
   logical :: is_satisfied
   type(version_range_t) :: range
   type(error_t), allocatable :: e
-  character(:), allocatable :: long_input
+  character(:), allocatable :: long_input, fuzz_input, canonical
   character(32) :: huge_str
+  integer(int64) :: rng_state = 20260726_int64
+  integer :: i
 
 !################################### Create ###################################!
 
@@ -1486,11 +1489,129 @@ program test
   call v1%try_satisfy('>=1.0.0'//achar(10)//'<2.0.0', is_satisfied, e)
   if (.not. allocated(e)) call fail('Newline-separated comparators should report an error')
 
+!######################## property and fuzz testing ###########################!
+
+  do i = 1, 2000
+    v1 = random_version()
+    call v2%parse(v1%to_string(), e, strict_mode=.true.)
+    if (allocated(e)) call fail('parse(to_string(version)) should succeed')
+    if (.not. v1%is_exactly(v2)) call fail('parse(to_string(version)) should round-trip exactly')
+
+    v1 = random_version()
+    v2 = random_version()
+    if ((v1 < v2) .and. (v2 < v1)) call fail('Version ordering should be antisymmetric')
+    if ((v1 > v2) .and. (v2 > v1)) call fail('Version ordering should be antisymmetric')
+    if ((v1 == v2) .neqv. (.not. (v1 < v2) .and. .not. (v1 > v2))) then
+      call fail('Equality should be consistent with ordering')
+    end if
+
+    block
+      type(version_t) :: v3
+      v3 = random_version()
+      if ((v1 < v2) .and. (v2 < v3) .and. .not. (v1 < v3)) call fail('Less-than should be transitive')
+      if ((v1 > v2) .and. (v2 > v3) .and. .not. (v1 > v3)) call fail('Greater-than should be transitive')
+    end block
+
+    v1 = version_t(random_int(20), random_int(20), random_int(20), 'alpha.1', 'build-a')
+    v2 = version_t(v1%major(), v1%minor(), v1%patch(), v1%prerelease(), 'build-b.001')
+    if (v1 /= v2 .or. v1 < v2 .or. v1 > v2) call fail('Build metadata should not affect precedence')
+  end do
+
+  do i = 1, 5000
+    fuzz_input = random_text(64)
+
+    call v1%parse(fuzz_input, e)
+    if (.not. allocated(e)) then
+      canonical = v1%to_string()
+      if (.not. is_version(canonical, strict_mode=.true.)) call fail('Parsed version should have canonical output')
+    end if
+
+    call v1%parse(fuzz_input, e, strict_mode=.true.)
+    if (.not. allocated(e)) then
+      canonical = v1%to_string()
+      if (.not. is_version(canonical, strict_mode=.true.)) call fail('Strict parse should emit valid SemVer')
+      call v2%parse(canonical, e, strict_mode=.true.)
+      if (allocated(e)) call fail('Canonical strict output should parse')
+      if (.not. v1%is_exactly(v2)) call fail('Canonical strict output should round-trip')
+    end if
+
+    if (is_version(fuzz_input)) then
+      call v1%parse(fuzz_input, e)
+      if (allocated(e)) call fail('is_version and parse should agree')
+    end if
+    if (is_version(fuzz_input, strict_mode=.true.)) then
+      call v1%parse(fuzz_input, e, strict_mode=.true.)
+      if (allocated(e)) call fail('Strict is_version and parse should agree')
+    end if
+
+    call range%parse(fuzz_input, e)
+    if (.not. allocated(e)) then
+      v1 = random_version()
+      call range%try_satisfy(v1, is_satisfied, e)
+      if (allocated(e)) call fail('Successfully parsed range should be safe to evaluate')
+    end if
+  end do
+
 !#################################final_message################################!
 
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
 
 contains
+
+  integer function random_int(limit)
+    integer, intent(in) :: limit
+
+    rng_state = modulo(rng_state*1103515245_int64 + 12345_int64, 2147483648_int64)
+    random_int = int(modulo(rng_state, int(limit, int64)))
+  end
+
+  function random_version() result(version)
+    type(version_t) :: version
+
+    integer :: major, minor, patch
+
+    major = random_int(20)
+    minor = random_int(20)
+    patch = random_int(20)
+
+    select case (random_int(6))
+    case (0)
+      version = version_t(major, minor, patch)
+    case (1)
+      version = version_t(major, minor, patch, 'alpha')
+    case (2)
+      version = version_t(major, minor, patch, 'alpha.1')
+    case (3)
+      version = version_t(major, minor, patch, '1.2', 'build.001')
+    case (4)
+      version = version_t(major, minor, patch, build='sha-1.000')
+    case default
+      version = version_t(major, minor, patch, 'rc.9', 'linux-x86.42')
+    end select
+  end
+
+  function random_text(max_length) result(str)
+    integer, intent(in) :: max_length
+    character(:), allocatable :: str
+
+    character(*), parameter :: parser_chars = &
+                               '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-+<>=!| '
+    integer :: j, length
+
+    length = random_int(max_length + 1)
+    allocate (character(length) :: str)
+    do j = 1, length
+      if (random_int(4) == 0) then
+        str(j:j) = achar(random_int(256))
+      else
+        block
+          integer :: index
+          index = random_int(len(parser_chars)) + 1
+          str(j:j) = parser_chars(index:index)
+        end block
+      end if
+    end do
+  end
 
   subroutine fail(msg)
     character(*), intent(in) :: msg
