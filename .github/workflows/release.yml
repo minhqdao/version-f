@@ -83,11 +83,13 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
+          changelog_url="https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/CHANGELOG.md"
           gh release create "$GITHUB_REF_NAME" \
             "dist/version-f-$version.tar.gz" \
             "dist/version-f-$version.zip" \
             "dist/SHA256SUMS" \
             --fail-on-no-commits \
             --generate-notes \
+            --notes "See [CHANGELOG.md]($changelog_url) for release details and breaking changes." \
             --title "version-f $GITHUB_REF_NAME" \
             --verify-tag
