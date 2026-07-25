@@ -42,6 +42,33 @@ an invalid state through direct assignment. Use `major()`, `minor()`, `patch()`,
 constructed `version_t` is initialized to `0.0.0`. Identifier accessors return
 dot-separated strings, or an empty string when no identifiers are present.
 
+### CMake
+
+Use the exported target after installing version-f:
+
+```cmake
+find_package(version-f CONFIG REQUIRED)
+target_link_libraries(your-target PRIVATE version-f::version-f)
+```
+
+Or download it while configuring your project:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(version-f
+  GIT_REPOSITORY https://github.com/minhqdao/version-f.git
+  GIT_TAG v0.4.0
+)
+FetchContent_MakeAvailable(version-f)
+target_link_libraries(your-target PRIVATE version-f::version-f)
+```
+
+For a standalone build, run `cmake -S . -B build/cmake`, followed by
+`cmake --build build/cmake` and `ctest --test-dir build/cmake`. Set
+`BUILD_SHARED_LIBS=ON` for a shared library. Tests and examples can be controlled
+with `VERSION_F_BUILD_TESTS` and `VERSION_F_BUILD_EXAMPLES`. Installed Fortran
+module files must be consumed with a compatible compiler.
+
 ### make
 
 To build the library using the provided `Makefile`, navigate to the project's root directory and execute the following command if you are on a Unix-like system:
