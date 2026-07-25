@@ -378,6 +378,20 @@ With make:
 make test FFLAGS="-O2 -Wall -Wextra -fcheck=all -fbacktrace"
 ```
 
+### Coverage
+
+The CI generates a coverage report with
+[gcovr](https://gcovr.com/en/stable/). It currently uses GCC 15 because gcovr
+8.6 does not read GCC 16 Fortran coverage correctly. To generate it locally:
+
+```bash
+fpm test --compiler gfortran-15 --build-dir build/coverage-fpm --flag '--coverage -O0 -g' --link-flag '--coverage'
+mkdir -p build/coverage
+gcovr --root . --filter src/ --gcov-executable gcov-15 --html-details build/coverage/index.html
+```
+
+Open `build/coverage/index.html` to view the report.
+
 ## Formatting
 
 The CI will fail if the code is not formatted correctly. Please configure your
