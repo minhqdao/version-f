@@ -1,16 +1,19 @@
 name: CI
-on: push
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   fpm-test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
-          - { compiler: gfortran }
-          - { compiler: ifx }
-          - { compiler: ifort }
+          - { compiler: gfortran, fpm_flags: "--flag '-Wall -Wextra'" }
+          - { compiler: ifx, fpm_flags: "--flag '-warn all'" }
+          - { compiler: ifort, fpm_flags: "--flag '-warn all'" }
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
@@ -18,9 +21,10 @@ jobs:
             toolchain: { compiler: ifort }
         include:
           - os: ubuntu-latest
-            toolchain: { compiler: nvfortran }
+            toolchain:
+              { compiler: nvfortran, fpm_flags: "--flag '-Minform=inform'" }
           - os: windows-latest
-            toolchain: { msystem: ucrt64 }
+            toolchain: { msystem: ucrt64, fpm_flags: "" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -31,19 +35,19 @@ jobs:
       - uses: fortran-lang/setup-fpm@v10
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: fpm test
+      - run: fpm test ${{ matrix.toolchain.fpm_flags }}
 
   make-test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
-          - { compiler: gfortran }
-          - { compiler: ifx }
-          - { compiler: ifort }
-          - { compiler: lfortran }
-          - { compiler: flang }
+          - { compiler: gfortran, make_flags: "FFLAGS='-O2 -Wall -Wextra'" }
+          - { compiler: ifx, make_flags: "FFLAGS='-O2 -warn all'" }
+          - { compiler: ifort, make_flags: "FFLAGS='-O2 -warn all'" }
+          - { compiler: lfortran, make_flags: "" }
+          - { compiler: flang, make_flags: "" }
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
@@ -51,17 +55,25 @@ jobs:
             toolchain: { compiler: ifort }
         include:
           - os: ubuntu-latest
-            toolchain: { compiler: nvfortran }
+            toolchain:
+              {
+                compiler: nvfortran,
+                make_flags: "FFLAGS='-O2 -Minform=inform'",
+              }
           - os: ubuntu-latest
-            toolchain: { compiler: aocc }
+            toolchain: { compiler: aocc, make_flags: "" }
           - os: ubuntu-24.04-arm
-            toolchain: { compiler: nvfortran }
+            toolchain:
+              {
+                compiler: nvfortran,
+                make_flags: "FFLAGS='-O2 -Minform=inform'",
+              }
           - os: macos-26-intel
-            toolchain: { compiler: ifort }
+            toolchain: { compiler: ifort, make_flags: "FFLAGS='-O2 -warn all'" }
           - os: windows-latest
-            toolchain: { msystem: ucrt64 }
+            toolchain: { msystem: ucrt64, make_flags: "" }
           - os: windows-11-arm
-            toolchain: { compiler: flang }
+            toolchain: { compiler: flang, make_flags: "" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -71,7 +83,7 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
       - run: echo "${{ steps.setup.outputs.version }}"
-      - run: make test
+      - run: make test ${{ matrix.toolchain.make_flags }}
 
   format:
     runs-on: ubuntu-latest
