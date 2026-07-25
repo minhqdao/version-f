@@ -91,5 +91,5 @@ jobs:
             --fail-on-no-commits \
             --generate-notes \
             --notes "See [CHANGELOG.md]($changelog_url) for release details and breaking changes." \
-            --title "version-f $GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
             --verify-tag
