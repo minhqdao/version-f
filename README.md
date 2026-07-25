@@ -304,7 +304,7 @@ flags to avoid surprises. The recommended flags per compiler are:
 | Compiler | Flags |
 | --- | --- |
 | gfortran | `-Wall -Wextra` |
-| ifx / ifort | `-warn all` |
+| ifx / ifort | `-warn:all` |
 | nvfortran | `-Minform=inform` |
 
 With fpm:

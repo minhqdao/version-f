@@ -14,9 +14,9 @@ jobs:
           - compiler: gfortran
             fpm_flags: "--flag '-Wall -Wextra'"
           - compiler: ifx
-            fpm_flags: '--flag "-warn all"'
+            fpm_flags: "--flag -warn:all"
           - compiler: ifort
-            fpm_flags: '--flag "-warn all"'
+            fpm_flags: "--flag -warn:all"
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
