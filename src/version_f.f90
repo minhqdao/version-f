@@ -750,7 +750,10 @@ contains
 
     do i = 1, len(str)
       c = ichar(str(i:i))
-      if (c < 0 .or. c > 127 .or. .not. valid(c)) then
+      if (c < 0 .or. c > 127) then
+        error = error_t("Invalid character in '"//str//"'."); return
+      end if
+      if (.not. valid(c)) then
         error = error_t("Invalid character in '"//str//"'."); return
       end if
     end do
