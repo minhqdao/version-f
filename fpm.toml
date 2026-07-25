@@ -10,3 +10,10 @@ keywords = ["semver", "semantic-versioning", "versioning", "version", "fortran"]
 
 [build]
 module-naming = true
+
+[extra.fortitude.check]
+ignore = ["S061"]
+line-length = 132
+
+[extra.fortitude.check.strings]
+quotes = "single"

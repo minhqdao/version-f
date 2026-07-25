@@ -1,8 +1,8 @@
 !> This program loads a list of versions and checks whether they satisfy given version ranges.
 program ex2
-  use version_f
+  use version_f, only: version_t
 
-  implicit none
+  implicit none(type, external)
 
   type(version_t), allocatable :: all_versions(:)
   type(version_t), allocatable :: smaller_versions(:)

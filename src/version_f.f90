@@ -2,7 +2,7 @@
 !> procedures that are necessary to create, parse, compare, convert and
 !> manipulate version numbers.
 module version_f
-  implicit none
+  implicit none(type, external)
   private
 
   public :: version_t, error_t, is_version, version_range_t
@@ -820,7 +820,7 @@ contains
     ! Multi-digit numerical prerelease identifiers must not start with zero.
     if (is_prerelease .and. len(str) > 1) then
       if (is_numerical(str) .and. str(1:1) == '0') then
-        error = error_t("Numerical prerelease identifiers must not contain leading zeroes."); return
+        error = error_t('Numerical prerelease identifiers must not contain leading zeroes.'); return
       end if
     end if
   end
