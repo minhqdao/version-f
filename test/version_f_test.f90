@@ -1415,6 +1415,10 @@ program test
   v2 = version_t(0, 0, 0, '99999999998')
   if (.not. v1 > v2) call fail('greater than overflow fallback failed')
 
+  v1 = version_t(0, 0, 0, repeat('9', 100))
+  v2 = version_t(0, 0, 0, '1'//repeat('0', 100))
+  if (.not. v1 < v2) call fail('Large numeric prerelease identifiers should compare by digit count')
+
 !###################### increment_prerelease with build-only ##################!
 
   v1 = version_t(1, 0, 0, build='build')
@@ -1490,6 +1494,15 @@ program test
   if (.not. allocated(e)) call fail('Newline-separated comparators should report an error')
 
 !######################## property and fuzz testing ###########################!
+
+  long_input = repeat('>=1.0.0 ', 2000)
+  call range%parse(long_input, e)
+  if (allocated(e)) call fail('Large comparator range should parse')
+
+  long_input = '1.0.0-'//repeat('a.', 1999)//'a'
+  call v1%parse(long_input, e, strict_mode=.true.)
+  if (allocated(e)) call fail('Version with many identifiers should parse')
+  if (v1%to_string() /= long_input) call fail('Version with many identifiers should round-trip')
 
   do i = 1, 2000
     v1 = random_version()
