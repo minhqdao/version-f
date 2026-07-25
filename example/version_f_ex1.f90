@@ -2,7 +2,7 @@
 program ex1
   use version_f, only: version_t
 
-  implicit none(type, external)
+  implicit none
 
   type box
     character(len=:), allocatable :: name

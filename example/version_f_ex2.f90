@@ -2,7 +2,7 @@
 program ex2
   use version_f, only: version_t
 
-  implicit none(type, external)
+  implicit none
 
   type(version_t), allocatable :: all_versions(:)
   type(version_t), allocatable :: smaller_versions(:)

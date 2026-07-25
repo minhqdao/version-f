@@ -14,6 +14,7 @@ module-naming = true
 [extra.fortitude.check]
 ignore = ["S061"]
 line-length = 132
+target-std = "f2008"
 
 [extra.fortitude.check.strings]
 quotes = "single"

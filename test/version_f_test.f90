@@ -2,7 +2,7 @@ program test
   use, intrinsic :: iso_fortran_env, only: int64
   use version_f, only: error_t, is_version, version_range_t, version_t
 
-  implicit none(type, external)
+  implicit none
 
   type(version_t) :: v1, v2
   logical :: is_satisfied
