@@ -229,30 +229,73 @@ contains
   end
 
   !> Returns a string representation of the version including prerelease and
-  !> build data.
+  !> build data. Pre-computes the total length to avoid O(n^2) concatenation.
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
 
-    integer :: i
+    character(:), allocatable :: s_major, s_minor, s_patch
+    integer :: n, pos, i
 
-    str = trim(int2s(this%major))//'.' &
-    &   //trim(int2s(this%minor))//'.' &
-    &   //trim(int2s(this%patch))
+    s_major = int2s(this%major)
+    s_minor = int2s(this%minor)
+    s_patch = int2s(this%patch)
+
+    n = len_trim(s_major) + 1 + len_trim(s_minor) + 1 + len_trim(s_patch)
 
     if (allocated(this%prerelease)) then
-      str = str//'-'
+      n = n + 1
       do i = 1, size(this%prerelease)
-        str = str//this%prerelease(i)%str
-        if (i < size(this%prerelease)) str = str//'.'
+        n = n + len(this%prerelease(i)%str)
+        if (i < size(this%prerelease)) n = n + 1
       end do
     end if
 
     if (allocated(this%build)) then
-      str = str//'+'
+      n = n + 1
       do i = 1, size(this%build)
-        str = str//this%build(i)%str
-        if (i < size(this%build)) str = str//'.'
+        n = n + len(this%build(i)%str)
+        if (i < size(this%build)) n = n + 1
+      end do
+    end if
+
+    allocate (character(n) :: str)
+
+    pos = 1
+    str(pos:pos + len_trim(s_major) - 1) = trim(s_major)
+    pos = pos + len_trim(s_major)
+    str(pos:pos) = '.'
+    pos = pos + 1
+    str(pos:pos + len_trim(s_minor) - 1) = trim(s_minor)
+    pos = pos + len_trim(s_minor)
+    str(pos:pos) = '.'
+    pos = pos + 1
+    str(pos:pos + len_trim(s_patch) - 1) = trim(s_patch)
+    pos = pos + len_trim(s_patch)
+
+    if (allocated(this%prerelease)) then
+      str(pos:pos) = '-'
+      pos = pos + 1
+      do i = 1, size(this%prerelease)
+        str(pos:pos + len(this%prerelease(i)%str) - 1) = this%prerelease(i)%str
+        pos = pos + len(this%prerelease(i)%str)
+        if (i < size(this%prerelease)) then
+          str(pos:pos) = '.'
+          pos = pos + 1
+        end if
+      end do
+    end if
+
+    if (allocated(this%build)) then
+      str(pos:pos) = '+'
+      pos = pos + 1
+      do i = 1, size(this%build)
+        str(pos:pos + len(this%build(i)%str) - 1) = this%build(i)%str
+        pos = pos + len(this%build(i)%str)
+        if (i < size(this%build)) then
+          str(pos:pos) = '.'
+          pos = pos + 1
+        end if
       end do
     end if
   end
@@ -527,21 +570,30 @@ contains
     write (str, '(I0)') num
   end
 
-  !> Validate prerelease or build identifier string without allocating.
+  !> Validate prerelease or build identifier string without allocating. Uses an
+  !> ASCII lookup table for O(1) character validation instead of O(m) scans.
   pure subroutine validate_identifiers(str, error)
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
-    character(*), parameter :: valid_chars = &
-    & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
-    integer :: i, start, length
+    integer :: i, c, start, length
+    logical :: valid(0:127)
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
     end if
 
+    ! Build lookup table for valid identifier characters.
+    valid = .false.
+    valid(ichar('0'):ichar('9')) = .true.
+    valid(ichar('a'):ichar('z')) = .true.
+    valid(ichar('A'):ichar('Z')) = .true.
+    valid(ichar('-')) = .true.
+    valid(ichar('.')) = .true.
+
     do i = 1, len(str)
-      if (index(valid_chars, str(i:i)) == 0) then
+      c = ichar(str(i:i))
+      if (c < 0 .or. c > 127 .or. .not. valid(c)) then
         error = error_t("Invalid character in '"//str//"'."); return
       end if
     end do
@@ -955,28 +1007,41 @@ contains
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
-    integer :: i_sep
+    integer :: i_sep, n_sets, idx
     character(:), allocatable :: str
     type(comparator_set_t) :: comp_set
 
     str = string
-    allocate (this%comp_sets(0))
 
+    ! Pre-count sets separated by ||.
+    n_sets = 1
     i_sep = index(str, '||')
-
     do while (i_sep /= 0)
-      call comp_set%parse_comp_set(str(1:i_sep - 1), error)
-      if (allocated(error)) return
-
-      call this%extend_with(comp_set)
+      n_sets = n_sets + 1
       str = str(i_sep + 2:)
       i_sep = index(str, '||')
     end do
 
+    allocate (this%comp_sets(n_sets))
+
+    ! Parse each set and assign directly.
+    str = string
+    idx = 0
+
+    i_sep = index(str, '||')
+    do while (i_sep /= 0)
+      idx = idx + 1
+      call comp_set%parse_comp_set(str(1:i_sep - 1), error)
+      if (allocated(error)) return
+      this%comp_sets(idx) = comp_set
+      str = str(i_sep + 2:)
+      i_sep = index(str, '||')
+    end do
+
+    idx = idx + 1
     call comp_set%parse_comp_set(str, error)
     if (allocated(error)) return
-
-    call this%extend_with(comp_set)
+    this%comp_sets(idx) = comp_set
   end
 
   !> Extend array of comparator sets within version range with another comparator.
@@ -1008,6 +1073,7 @@ contains
 
     character(:), allocatable :: str
     type(comparator_t) :: comp
+    integer :: n_comps, idx, i, l
 
     str = trim(adjustl(string))
 
@@ -1015,8 +1081,39 @@ contains
       error = error_t('Comparator set cannot be empty.'); return
     end if
 
-    allocate (this%comps(0))
+    ! Pre-count comparators by scanning for operator/version boundaries.
+    n_comps = 0
+    i = 1
+    l = len(str)
+    do while (i <= l)
+      ! Skip whitespace between comparators.
+      do while (i <= l .and. str(i:i) == ' ')
+        i = i + 1
+      end do
+      if (i > l) exit
+      n_comps = n_comps + 1
+      ! Skip past the operator (if any).
+      if (str(i:i) == '>' .or. str(i:i) == '<' .or. &
+          & str(i:i) == '!' .or. str(i:i) == '=') then
+        i = i + 1
+        if (i <= l .and. str(i:i) == '=') i = i + 1
+      end if
+      ! Skip whitespace after operator (before version).
+      do while (i <= l .and. str(i:i) == ' ')
+        i = i + 1
+      end do
+      ! Skip past the version part until next operator or end.
+      do while (i <= l .and. str(i:i) /= ' ' .and. &
+              & str(i:i) /= '>' .and. str(i:i) /= '<' .and. &
+              & str(i:i) /= '!' .and. str(i:i) /= '=')
+        i = i + 1
+      end do
+    end do
 
+    allocate (this%comps(n_comps))
+
+    ! Parse each comparator and assign directly.
+    idx = 0
     do
       if (len(str) == 0) then
         call comp%parse_comp_and_crop_str('', str, error)
@@ -1047,7 +1144,8 @@ contains
       end if
 
       if (allocated(error)) return
-      call this%extend_with(comp)
+      idx = idx + 1
+      this%comps(idx) = comp
       if (str == '') return
       str = trim(adjustl(str))
     end do
