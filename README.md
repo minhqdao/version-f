@@ -25,7 +25,7 @@ simply add this package as a dependency to your `fpm.toml` file:
 
 [dependencies.version-f]
 git = "https://github.com/minhqdao/version-f.git"
-tag = "v0.4.0"
+tag = "v0.5.0"
 ```
 
 Then import the `version_f` module into your Fortran code:
@@ -57,7 +57,7 @@ Or download it while configuring your project:
 include(FetchContent)
 FetchContent_Declare(version-f
   GIT_REPOSITORY https://github.com/minhqdao/version-f.git
-  GIT_TAG v0.4.0
+  GIT_TAG v0.5.0
 )
 FetchContent_MakeAvailable(version-f)
 target_link_libraries(your-target PRIVATE version-f::version-f)
@@ -408,16 +408,17 @@ manual:
 7. Update the local branch and create an annotated tag on that exact commit:
 
    ```bash
+   release_tag=NEW_TAG
    git switch main
    git pull --ff-only
-   git tag -a <new-tag> -m "version-f <new-tag>"
-   git push origin <new-tag>
+   git tag -a "$release_tag" -m "version-f $release_tag"
+   git push origin "$release_tag"
    ```
 
 8. Check the Release workflow and the generated GitHub release. It should
    contain release notes, two source archives and `SHA256SUMS`.
 
-Replace `<new-tag>` with the chosen version. If publishing fails only because CI
+Replace `NEW_TAG` with the chosen version. If publishing fails only because CI
 was still running, wait for CI and rerun the Release job. An incorrect,
 unpublished tag may be deleted and recreated after fixing the release commit.
 Never move, delete or reuse a tag after its release has been published.

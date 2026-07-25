@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-26
+
 ### Added
 
 - CMake support for standalone, installed-package and `FetchContent` use.
@@ -19,7 +21,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Changed
 
 - Version and range parsing now use linear-time allocation and validation.
-- Version fields and parser implementation types are no longer public.
+- **Breaking:** Version fields and parser implementation types are no longer
+  public. Use the version accessors and range query procedures instead.
 - Version and range syntax compatibility is documented explicitly.
 - CI covers additional compilers, platforms and downstream CMake consumers.
 
@@ -83,7 +86,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Major, minor and patch increments.
 - Basic tests, example program and CI.
 
-[Unreleased]: https://github.com/minhqdao/version-f/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/minhqdao/version-f/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/minhqdao/version-f/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/minhqdao/version-f/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/minhqdao/version-f/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/minhqdao/version-f/compare/v0.1.0...v0.2.0
