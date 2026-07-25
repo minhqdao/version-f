@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Added
+
+- gcovr coverage reports and Codecov pull request reporting in CI.
+
 ## [0.5.0] - 2026-07-26
 
 ### Added
