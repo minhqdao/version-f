@@ -781,6 +781,18 @@ program test
   if (v1 <= v2) call fail('Less than or equal failed.')
   if (.not. v1 >= v2) call fail('Greater than or equal failed.')
 
+  v1 = version_t(1, 0, 0, '99999999999')
+  v2 = version_t(1, 0, 0, '99999999998')
+  if (.not. v1 > v2) call fail('Overflow in numeric prerelease comparison failed.')
+
+  v1 = version_t(1, 0, 0, '99999999999')
+  v2 = version_t(1, 0, 0, '99999999999')
+  if (.not. v1 == v2) call fail('Overflow in numeric prerelease equality failed.')
+
+  v1 = version_t(1, 0, 0, '99999999998')
+  v2 = version_t(1, 0, 0, '99999999999')
+  if (.not. v1 < v2) call fail('Overflow in numeric prerelease less-than failed.')
+
   !############################### is_version #################################!
 
   if (is_version('')) call fail("'' isn't a version.")

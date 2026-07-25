@@ -313,14 +313,21 @@ contains
     type(string_t), allocatable, intent(inout) :: ids(:)
 
     type(string_t), allocatable :: tmp(:)
-    integer :: n
+    integer :: n, val
+    type(error_t), allocatable :: e
 
     if (allocated(ids)) then
       n = size(ids)
       if (ids(n)%is_numeric()) then
-        allocate (tmp(n))
-        tmp(1:n - 1) = ids(1:n - 1)
-        tmp(n)%str = trim(int2s(ids(n)%num() + 1))
+        call s2int(ids(n)%str, val, e)
+        if (allocated(e)) then
+          allocate (tmp(n))
+          tmp = ids
+        else
+          allocate (tmp(n))
+          tmp(1:n - 1) = ids(1:n - 1)
+          tmp(n)%str = trim(int2s(val + 1))
+        end if
       else
         allocate (tmp(n + 1))
         tmp(1:n) = ids(1:n)
@@ -699,11 +706,21 @@ contains
     type(string_t), intent(in) :: rhs(:)
 
     integer :: i, j
+    integer :: lhs_num, rhs_num
+    type(error_t), allocatable :: e
 
     do i = 1, min(size(lhs), size(rhs))
       if (lhs(i)%str == rhs(i)%str) cycle
       if (lhs(i)%is_numeric() .and. rhs(i)%is_numeric()) then
-        is_greater = s2i(lhs(i)%str) > s2i(rhs(i)%str); return
+        call s2int(lhs(i)%str, lhs_num, e)
+        if (allocated(e)) then
+          is_greater = lhs(i)%str > rhs(i)%str; return
+        end if
+        call s2int(rhs(i)%str, rhs_num, e)
+        if (allocated(e)) then
+          is_greater = lhs(i)%str > rhs(i)%str; return
+        end if
+        is_greater = lhs_num > rhs_num; return
       else if (lhs(i)%is_numeric()) then
         is_greater = .false.; return
       else if (rhs(i)%is_numeric()) then
