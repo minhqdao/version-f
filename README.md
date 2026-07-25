@@ -36,6 +36,12 @@ use version_f, only: version_t, error_t
 
 Run `fpm build` to download the dependency.
 
+The components of `version_t` are private so that a version cannot be placed in
+an invalid state through direct assignment. Use `major()`, `minor()`, `patch()`,
+`prerelease()` and `build()` to inspect them. A default
+constructed `version_t` is initialized to `0.0.0`. Identifier accessors return
+copies, using an empty array when no identifiers are present.
+
 ### make
 
 To build the library using the provided `Makefile`, navigate to the project's root directory and execute the following command if you are on a Unix-like system:
