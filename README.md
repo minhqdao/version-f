@@ -298,16 +298,25 @@ fpm run --example <example_program>
 
 ## Tests
 
-Run tests with:
+The CI enforces compiler warnings, so make sure to test locally with the same
+flags to avoid surprises. The recommended flags per compiler are:
+
+| Compiler | Flags |
+| --- | --- |
+| gfortran | `-Wall -Wextra` |
+| ifx / ifort | `-warn all` |
+| nvfortran | `-Minform=inform` |
+
+With fpm:
 
 ```bash
-fpm test
+fpm test --flag '-Wall -Wextra'
 ```
 
-Alternatively, you can use the provided `Makefile` if you are on a Unix-like system:
+With make:
 
 ```bash
-make test
+make test FFLAGS="-O2 -Wall -Wextra"
 ```
 
 ## Formatting
