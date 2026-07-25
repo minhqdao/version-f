@@ -192,6 +192,13 @@ jobs:
           fpm test --build-dir build/coverage-fpm --flag '--coverage -O0 -g' --link-flag '--coverage'
           mkdir -p build/coverage
           gcovr --root . --filter src/ --gcov-executable gcov-15 --fail-under-line 1 --txt --cobertura build/coverage/coverage.xml --html-details build/coverage/index.html
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          disable_search: true
+          fail_ci_if_error: true
+          files: build/coverage/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
       - uses: actions/upload-artifact@v7
         with:
           name: coverage

@@ -9,7 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- gcovr coverage reporting in CI.
+- gcovr coverage reports and Codecov pull request reporting in CI.
 
 ## [0.5.0] - 2026-07-26
 

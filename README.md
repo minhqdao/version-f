@@ -381,8 +381,9 @@ make test FFLAGS="-O2 -Wall -Wextra -fcheck=all -fbacktrace"
 ### Coverage
 
 The CI generates a coverage report with
-[gcovr](https://gcovr.com/en/stable/). It currently uses GCC 15 because gcovr
-8.6 does not read GCC 16 Fortran coverage correctly. To generate it locally:
+[gcovr](https://gcovr.com/en/stable/) and reports the result through
+[Codecov](https://codecov.io/). It currently uses GCC 15 because gcovr 8.6 does
+not read GCC 16 Fortran coverage correctly. To generate it locally:
 
 ```bash
 fpm test --compiler gfortran-15 --build-dir build/coverage-fpm --flag '--coverage -O0 -g' --link-flag '--coverage'
