@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/github/license/minhqdao/version-f?label=License&color=teal)](https://opensource.org/licenses/Apache-2.0)
 [![Release](https://img.shields.io/github/release/minhqdao/version-f?label=Release)](https://github.com/minhqdao/version-f/releases)
 [![CI](https://github.com/minhqdao/version-f/actions/workflows/ci.yml/badge.svg)](https://github.com/minhqdao/version-f/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/minhqdao/version-f/graph/badge.svg)](https://codecov.io/gh/minhqdao/version-f)
 
 
 This package implements the version syntax and precedence rules from
