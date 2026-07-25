@@ -229,30 +229,73 @@ contains
   end
 
   !> Returns a string representation of the version including prerelease and
-  !> build data.
+  !> build data. Pre-computes the total length to avoid O(n^2) concatenation.
   pure function to_string(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
 
-    integer :: i
+    character(:), allocatable :: s_major, s_minor, s_patch
+    integer :: n, pos, i
 
-    str = trim(int2s(this%major))//'.' &
-    &   //trim(int2s(this%minor))//'.' &
-    &   //trim(int2s(this%patch))
+    s_major = int2s(this%major)
+    s_minor = int2s(this%minor)
+    s_patch = int2s(this%patch)
+
+    n = len_trim(s_major) + 1 + len_trim(s_minor) + 1 + len_trim(s_patch)
 
     if (allocated(this%prerelease)) then
-      str = str//'-'
+      n = n + 1
       do i = 1, size(this%prerelease)
-        str = str//this%prerelease(i)%str
-        if (i < size(this%prerelease)) str = str//'.'
+        n = n + len(this%prerelease(i)%str)
+        if (i < size(this%prerelease)) n = n + 1
       end do
     end if
 
     if (allocated(this%build)) then
-      str = str//'+'
+      n = n + 1
       do i = 1, size(this%build)
-        str = str//this%build(i)%str
-        if (i < size(this%build)) str = str//'.'
+        n = n + len(this%build(i)%str)
+        if (i < size(this%build)) n = n + 1
+      end do
+    end if
+
+    allocate (character(n) :: str)
+
+    pos = 1
+    str(pos:pos + len_trim(s_major) - 1) = trim(s_major)
+    pos = pos + len_trim(s_major)
+    str(pos:pos) = '.'
+    pos = pos + 1
+    str(pos:pos + len_trim(s_minor) - 1) = trim(s_minor)
+    pos = pos + len_trim(s_minor)
+    str(pos:pos) = '.'
+    pos = pos + 1
+    str(pos:pos + len_trim(s_patch) - 1) = trim(s_patch)
+    pos = pos + len_trim(s_patch)
+
+    if (allocated(this%prerelease)) then
+      str(pos:pos) = '-'
+      pos = pos + 1
+      do i = 1, size(this%prerelease)
+        str(pos:pos + len(this%prerelease(i)%str) - 1) = this%prerelease(i)%str
+        pos = pos + len(this%prerelease(i)%str)
+        if (i < size(this%prerelease)) then
+          str(pos:pos) = '.'
+          pos = pos + 1
+        end if
+      end do
+    end if
+
+    if (allocated(this%build)) then
+      str(pos:pos) = '+'
+      pos = pos + 1
+      do i = 1, size(this%build)
+        str(pos:pos + len(this%build(i)%str) - 1) = this%build(i)%str
+        pos = pos + len(this%build(i)%str)
+        if (i < size(this%build)) then
+          str(pos:pos) = '.'
+          pos = pos + 1
+        end if
       end do
     end if
   end
