@@ -519,7 +519,7 @@ contains
     type(error_t), allocatable, intent(out) :: error
 
     character(*), parameter :: valid_chars = &
-    & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYYZ-.'
+    & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
     integer :: i, n, start, length
 
     if (len_trim(str) == 0) then
