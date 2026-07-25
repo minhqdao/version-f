@@ -1598,6 +1598,99 @@ program test
   v1 = version_t(1, 0, 1, build='alpha')
   if (.not. v1%is_stable()) call fail('is_stable-6 should be stable')
 
+!############################ increment_identifier overflow ####################!
+
+  v1 = version_t(0, 0, 0, '99999999999')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '0.0.0-99999999999') call fail('increment_prerelease overflow should preserve ids')
+
+  v1 = version_t(0, 0, 0, build='99999999999')
+  call v1%increment_build()
+  if (v1%to_string() /= '0.0.0+99999999999') call fail('increment_build overflow should keep unchanged')
+
+!###################### prerelease vs no-prerelease (same m.m.p) #############!
+
+  v1 = version_t(1, 0, 0)
+  v2 = version_t(1, 0, 0, 'alpha')
+  if (v1 == v2) call fail('1.0.0 should not equal 1.0.0-alpha')
+  if (.not. v1 /= v2) call fail('Inequality failed for 1.0.0 vs 1.0.0-alpha')
+  if (v1 < v2) call fail('1.0.0 should not be less than 1.0.0-alpha')
+  if (.not. v1 > v2) call fail('1.0.0 should be greater than 1.0.0-alpha')
+  if (v1 <= v2) call fail('Less than or equal failed for 1.0.0 vs 1.0.0-alpha')
+  if (.not. v1 >= v2) call fail('Greater than or equal failed for 1.0.0 vs 1.0.0-alpha')
+
+  v1 = version_t(1, 0, 0, 'alpha')
+  v2 = version_t(1, 0, 0)
+  if (v1 == v2) call fail('1.0.0-alpha should not equal 1.0.0')
+  if (.not. v1 /= v2) call fail('Inequality failed for 1.0.0-alpha vs 1.0.0')
+  if (.not. v1 < v2) call fail('1.0.0-alpha should be less than 1.0.0')
+  if (v1 > v2) call fail('1.0.0-alpha should not be greater than 1.0.0')
+  if (.not. v1 <= v2) call fail('Less than or equal failed for 1.0.0-alpha vs 1.0.0')
+  if (v1 >= v2) call fail('Greater than or equal failed for 1.0.0-alpha vs 1.0.0')
+
+  v1 = version_t(1, 0, 0, build='abc')
+  v2 = version_t(1, 0, 0, 'alpha')
+  if (v1 == v2) call fail('1.0.0+abc should not equal 1.0.0-alpha')
+  if (.not. v1 /= v2) call fail('Inequality failed for 1.0.0+abc vs 1.0.0-alpha')
+  if (v1 < v2) call fail('1.0.0+abc should not be less than 1.0.0-alpha')
+  if (.not. v1 > v2) call fail('1.0.0+abc should be greater than 1.0.0-alpha')
+  if (.not. v1 >= v2) call fail('Greater than or equal failed for 1.0.0+abc vs 1.0.0-alpha')
+  if (v1 <= v2) call fail('Less than or equal failed for 1.0.0+abc vs 1.0.0-alpha')
+
+  v1 = version_t(1, 0, 0, 'alpha')
+  v2 = version_t(1, 0, 0, build='abc')
+  if (v1 == v2) call fail('1.0.0-alpha should not equal 1.0.0+abc')
+  if (.not. v1 /= v2) call fail('Inequality failed for 1.0.0-alpha vs 1.0.0+abc')
+  if (.not. v1 < v2) call fail('1.0.0-alpha should be less than 1.0.0+abc')
+  if (v1 > v2) call fail('1.0.0-alpha should not be greater than 1.0.0+abc')
+  if (.not. v1 <= v2) call fail('Less than or equal failed for 1.0.0-alpha vs 1.0.0+abc')
+  if (v1 >= v2) call fail('Greater than or equal failed for 1.0.0-alpha vs 1.0.0+abc')
+
+!###################### to_string edge cases ##################################!
+
+  v1 = version_t(0, 0, 0, 'alpha')
+  if (v1%to_string() /= '0.0.0-alpha') call fail('to_string only prerelease')
+
+  v1 = version_t(0, 0, 0, build='build')
+  if (v1%to_string() /= '0.0.0+build') call fail('to_string only build')
+
+  v1 = version_t(0, 0, 0, 'a', 'b')
+  if (v1%to_string() /= '0.0.0-a+b') call fail('to_string prerelease + build')
+
+!###################### parse with whitespace ################################!
+
+  call v1%parse('  1.0.0  ', e)
+  if (allocated(e)) call fail(e%msg)
+  if (v1%to_string() /= '1.0.0') call fail('parse should trim whitespace')
+
+  call v1%parse('  1.0.0-alpha  ', e)
+  if (allocated(e)) call fail(e%msg)
+  if (v1%to_string() /= '1.0.0-alpha') call fail('parse should trim whitespace with prerelease')
+
+  call v1%parse('  1.0.0-alpha+build  ', e)
+  if (allocated(e)) call fail(e%msg)
+  if (v1%to_string() /= '1.0.0-alpha+build') call fail('parse should trim whitespace with prerelease and build')
+
+!###################### parse strict_mode edge cases ##########################!
+
+  call v1%parse('0.0.0-alpha', e, strict_mode=.true.)
+  if (allocated(e)) call fail(e%msg)
+
+  call v1%parse('0.0.0-alpha+build', e, strict_mode=.true.)
+  if (allocated(e)) call fail(e%msg)
+
+!###################### is_greater overflow fallback ##########################!
+
+  v1 = version_t(0, 0, 0, '99999999999')
+  v2 = version_t(0, 0, 0, '99999999998')
+  if (.not. v1 > v2) call fail('greater than overflow fallback failed')
+
+!###################### increment_prerelease with build-only ##################!
+
+  v1 = version_t(1, 0, 0, build='build')
+  call v1%increment_prerelease()
+  if (v1%to_string() /= '1.0.0-1') call fail('increment_prerelease on build-only should add prerelease')
+
 !#################################final_message################################!
 
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
