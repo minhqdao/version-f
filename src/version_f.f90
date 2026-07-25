@@ -1105,6 +1105,7 @@ contains
     else if (comparator%op == '=' .or. comparator%op == '') then
       is_satisfied = this == comparator%version
     else
+      is_satisfied = .false.
       error = error_t("Invalid operator: '"//comparator%op//"'.")
     end if
   end
