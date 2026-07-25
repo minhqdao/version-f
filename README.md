@@ -389,11 +389,45 @@ indentation width of 2 or run `fprettify -i 2 -r .` before committing.
 The CI also runs [Fortitude](https://github.com/PlasmaFAIR/fortitude). Make sure
 `fortitude check .` passes before committing.
 
+## Release process
+
+Releases are automatically published when tags are pushed, but version selection and preparation are
+manual:
+
+1. Create a release branch from an up-to-date `main`.
+2. Choose the next version according to Semantic Versioning.
+3. Update `version` in `fpm.toml` and both dependency tags in this README. CMake
+   reads its version from `fpm.toml`, so it requires no separate update.
+4. Move the entries in [CHANGELOG.md](CHANGELOG.md) from `Unreleased` into a
+   section for the new version and date. Keep an empty `Unreleased` section at
+   the top, update the comparison links at the bottom and call out breaking
+   changes.
+5. Commit the preparation, open a pull request and merge it into `main`.
+6. Wait for CI on the resulting `main` commit to pass. The release workflow
+   will reject a commit without a successful `main` CI run.
+7. Update the local branch and create an annotated tag on that exact commit:
+
+   ```bash
+   git switch main
+   git pull --ff-only
+   git tag -a <new-tag> -m "version-f <new-tag>"
+   git push origin <new-tag>
+   ```
+
+8. Check the Release workflow and the generated GitHub release. It should
+   contain release notes, two source archives and `SHA256SUMS`.
+
+Replace `<new-tag>` with the chosen version. If publishing fails only because CI
+was still running, wait for CI and rerun the Release job. An incorrect,
+unpublished tag may be deleted and recreated after fixing the release commit.
+Never move, delete or reuse a tag after its release has been published.
+
 ## Contribute
 
 Feel free to [create an issue](https://github.com/minhqdao/version-f/issues) in case you found a bug, have any questions or
 want to propose further improvements. Please stick to the existing coding style
-when you open a pull request.
+when you open a pull request. Add user-visible changes to the `Unreleased`
+section of [CHANGELOG.md](CHANGELOG.md).
 
 ## API stability
 
