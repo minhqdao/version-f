@@ -120,9 +120,10 @@ print *, v1 == v2 ! true
 call v1%increment_patch() ! 0.5.4
 call v1%increment_build() ! 0.5.4+1
 
-v1 = version_t(0, 5, 3, 'alpha.1' '1')
+v1 = version_t(0, 5, 3, 'alpha.1', '1')
 print *, v1%to_string() ! '0.5.3-alpha.1+1'
-print *, v1%increment_build() ! '0.5.3-alpha.1+2'
+call v1%increment_build()
+print *, v1%to_string() ! '0.5.3-alpha.1+2'
 ```
 
 ## Compare versions
