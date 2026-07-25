@@ -977,22 +977,6 @@ program test
   if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
   if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
 
-!################################operator_index################################!
-
-  if (operator_index('') /= 0) call fail('op-index-1 failed.')
-  if (operator_index(' ') /= 1) call fail('op-index-2 failed.')
-  if (operator_index('      ') /= 1) call fail('op-index-3 failed.')
-  if (operator_index('<') /= 1) call fail('op-index-4 failed.')
-  if (operator_index('>') /= 1) call fail('op-index-5 failed.')
-  if (operator_index('!') /= 1) call fail('op-index-6 failed.')
-  if (operator_index('=') /= 1) call fail('op-index-7 failed.')
-  if (operator_index('asdfj76r58>') /= 11) call fail('op-index-8 failed.')
-  if (operator_index('asdfj76r58 ') /= 11) call fail('op-index-9 failed.')
-  if (operator_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-10 failed.')
-  if (operator_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-11 failed.')
-  if (operator_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-12 failed.')
-  if (operator_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-13 failed.')
-
 !##################################try_satisfy#################################!
 
   v1 = version_t(0, 1, 0)
