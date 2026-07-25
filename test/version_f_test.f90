@@ -1513,6 +1513,25 @@ program test
   if (comp_set%comps(2)%version /= version_t(2, 1, 0)) call fail('parse-comp-set-9: Version does not match.')
   if (allocated(e)) call fail('parse-comp-set-9 should not fail.')
 
+  ! Regression tests for scanners reaching the end of the input. Fortran does
+  ! not guarantee short-circuit evaluation in bounds-checking expressions.
+  call comp_set%parse('0.0.1', e)
+  if (allocated(e)) call fail('parse-comp-set-10 should not fail.')
+  if (size(comp_set%comps) /= 1) call fail("parse-comp-set-10: Wrong number of comparators.")
+  if (comp_set%comps(1)%version /= version_t(0, 0, 1)) call fail('parse-comp-set-10: Version does not match.')
+
+  call comp_set%parse('>=1.2.3', e)
+  if (allocated(e)) call fail('parse-comp-set-11 should not fail.')
+  if (size(comp_set%comps) /= 1) call fail("parse-comp-set-11: Wrong number of comparators.")
+  if (comp_set%comps(1)%op /= '>=') call fail("parse-comp-set-11: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1, 2, 3)) call fail('parse-comp-set-11: Version does not match.')
+
+  call comp_set%parse('> 1.2.3', e)
+  if (allocated(e)) call fail('parse-comp-set-12 should not fail.')
+  if (size(comp_set%comps) /= 1) call fail("parse-comp-set-12: Wrong number of comparators.")
+  if (comp_set%comps(1)%op /= '>') call fail("parse-comp-set-12: Wrong operator parsed.")
+  if (comp_set%comps(1)%version /= version_t(1, 2, 3)) call fail('parse-comp-set-12: Version does not match.')
+
 !##############################parse_version_range#############################!
 
   call range%parse('', e)
