@@ -527,16 +527,14 @@ contains
     write (str, '(I0)') num
   end
 
-  !> Check for valid prerelease or build data and build identifiers from
-  !> the string.
-  pure subroutine build_identifiers(ids, str, error)
-    type(string_t), allocatable, intent(out) :: ids(:)
+  !> Validate prerelease or build identifier string without allocating.
+  pure subroutine validate_identifiers(str, error)
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
     character(*), parameter :: valid_chars = &
     & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
-    integer :: i, n, start, length
+    integer :: i, start, length
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
@@ -553,9 +551,36 @@ contains
       error = error_t('Identifier must not end with a dot.'); return
     end if
 
-    ! Count identifiers
+    ! Validate each identifier.
+    start = 1
+    do
+      length = index(str(start:), '.')
+      if (length == 0) then
+        call validate_identifier(str(start:), error)
+        return
+      else
+        call validate_identifier(str(start:start + length - 2), error)
+        if (allocated(error)) return
+        start = start + length
+      end if
+    end do
+  end
+
+  !> Check for valid prerelease or build data and build identifiers from
+  !> the string.
+  pure subroutine build_identifiers(ids, str, error)
+    type(string_t), allocatable, intent(out) :: ids(:)
+    character(*), intent(in) :: str
+    type(error_t), allocatable, intent(out) :: error
+
+    integer :: i, n, start, length
+
+    call validate_identifiers(str, error)
+    if (allocated(error)) return
+
+    ! Count identifiers.
     n = 1
-    do i = 1, len(str)
+    do i = 1, len_trim(str)
       if (str(i:i) == '.') n = n + 1
     end do
 
@@ -565,14 +590,8 @@ contains
     do i = 1, n
       length = index(str(start:), '.')
       if (length == 0) then
-        ! Last identifier
-        call validate_identifier(str(start:), error)
-        if (allocated(error)) return
         ids(i)%str = str(start:)
       else
-        ! Not the last one
-        call validate_identifier(str(start:start + length - 2), error)
-        if (allocated(error)) return
         ids(i)%str = str(start:start + length - 2)
         start = start + length
       end if
@@ -767,6 +786,42 @@ contains
     end if
   end
 
+  !> Validate a version string without allocating a `version_t`. Returns the
+  !> first error encountered, or an unallocated error on success.
+  subroutine validate_version_string(str, error, strict_mode)
+    character(*), intent(in) :: str
+    type(error_t), allocatable, intent(out) :: error
+    logical, optional, intent(in) :: strict_mode
+
+    type(version_t) :: version
+    integer :: i, j
+    character(:), allocatable :: trimmed
+
+    trimmed = trim(adjustl(str))
+
+    i = index(trimmed, '-')
+    j = index(trimmed, '+')
+
+    if (i == 0 .and. j == 0) then
+      call build_mmp(version, trimmed, error, strict_mode)
+    else if (i /= 0 .and. j == 0) then
+      call build_mmp(version, trimmed(1:i - 1), error, strict_mode)
+      if (allocated(error)) return
+      call validate_identifiers(trimmed(i + 1:len_trim(trimmed)), error)
+    else if ((i == 0 .and. j /= 0) .or. &
+            & ((i /= 0 .and. j /= 0) .and. (i > j))) then
+      call build_mmp(version, trimmed(1:j - 1), error, strict_mode)
+      if (allocated(error)) return
+      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), error)
+    else if (i /= 0 .and. j /= 0) then
+      call build_mmp(version, trimmed(1:i - 1), error, strict_mode)
+      if (allocated(error)) return
+      call validate_identifiers(trimmed(i + 1:j - 1), error)
+      if (allocated(error)) return
+      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), error)
+    end if
+  end
+
   !> True if the string can be parsed as a valid `version_t`. Use `parse` if you
   !> wish to receive detailed error messages. In strict mode, all major, minor
   !> and patch versions must be provided. Implicit zeros are forbidden in strict
@@ -780,10 +835,9 @@ contains
     !> zeros are forbidden in strict mode.
     logical, optional, intent(in) :: strict_mode
 
-    type(version_t) :: version
     type(error_t), allocatable :: error
 
-    call version%parse(str, error, strict_mode)
+    call validate_version_string(str, error, strict_mode)
     is_version = .not. allocated(error)
   end
 
