@@ -1087,7 +1087,8 @@ contains
     l = len(str)
     do while (i <= l)
       ! Skip whitespace between comparators.
-      do while (i <= l .and. str(i:i) == ' ')
+      do while (i <= l)
+        if (str(i:i) /= ' ') exit
         i = i + 1
       end do
       if (i > l) exit
@@ -1096,16 +1097,20 @@ contains
       if (str(i:i) == '>' .or. str(i:i) == '<' .or. &
           & str(i:i) == '!' .or. str(i:i) == '=') then
         i = i + 1
-        if (i <= l .and. str(i:i) == '=') i = i + 1
+        if (i <= l) then
+          if (str(i:i) == '=') i = i + 1
+        end if
       end if
       ! Skip whitespace after operator (before version).
-      do while (i <= l .and. str(i:i) == ' ')
+      do while (i <= l)
+        if (str(i:i) /= ' ') exit
         i = i + 1
       end do
       ! Skip past the version part until next operator or end.
-      do while (i <= l .and. str(i:i) /= ' ' .and. &
-              & str(i:i) /= '>' .and. str(i:i) /= '<' .and. &
-              & str(i:i) /= '!' .and. str(i:i) /= '=')
+      do while (i <= l)
+        if (str(i:i) == ' ' .or. str(i:i) == '>' .or. &
+            & str(i:i) == '<' .or. str(i:i) == '!' .or. &
+            & str(i:i) == '=') exit
         i = i + 1
       end do
     end do

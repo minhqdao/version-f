@@ -12,7 +12,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
           - compiler: gfortran
-            fpm_flags: "--flag '-Wall -Wextra'"
+            fpm_flags: "--flag '-Wall -Wextra -fcheck=all -fbacktrace'"
           - compiler: ifx
             fpm_flags: "--flag -warn:all"
           - compiler: ifort
@@ -50,7 +50,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
           - compiler: gfortran
-            make_flags: "FFLAGS='-O2 -Wall -Wextra'"
+            make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
           - compiler: ifx
             make_flags: 'FFLAGS="-O2 -warn all"'
           - compiler: ifort

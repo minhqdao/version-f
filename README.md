@@ -304,20 +304,20 @@ flags to avoid surprises. The recommended flags per compiler are:
 
 | Compiler | Flags |
 | --- | --- |
-| gfortran | `-Wall -Wextra` |
+| gfortran | `-Wall -Wextra -fcheck=all -fbacktrace` |
 | ifx / ifort | `-warn:all` |
 | nvfortran | `-Minform=inform` |
 
 With fpm:
 
 ```bash
-fpm test --flag '-Wall -Wextra'
+fpm test --flag '-Wall -Wextra -fcheck=all -fbacktrace'
 ```
 
 With make:
 
 ```bash
-make test FFLAGS="-O2 -Wall -Wextra"
+make test FFLAGS="-O2 -Wall -Wextra -fcheck=all -fbacktrace"
 ```
 
 ## Formatting
