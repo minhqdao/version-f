@@ -715,7 +715,7 @@ contains
   end
 
   !> True if both versions are exactly the same including the build metadata.
-  !> This procedure has been added for conveniece. It is not part of the
+  !> This procedure has been added for convenience. It is not part of the
   !> Semantic Versioning 2.0.0 specification.
   elemental logical function is_exactly(self, other)
     class(version_t), intent(in) :: self

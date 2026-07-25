@@ -481,7 +481,7 @@ program test
   call v1%create(1, build='abc', error=e)
   call v2%create(1, build='abc', error=e)
   if (.not. v1 == v2) call fail('Equality failed.')
-  if (v1 /= v2) call fail('InequalityInequality failed.')
+  if (v1 /= v2) call fail('Inequality failed.')
   if (v1 < v2) call fail('Less than failed.')
   if (v1 > v2) call fail('Greater than failed.')
   if (.not. v1 <= v2) call fail('Less than or equal failed.')
@@ -951,11 +951,11 @@ program test
   if (operator_index('!') /= 1) call fail('op-index-6 failed.')
   if (operator_index('=') /= 1) call fail('op-index-7 failed.')
   if (operator_index('asdfj76r58>') /= 11) call fail('op-index-8 failed.')
-  if (operator_index('asdfj76r58 ') /= 11) call fail('op-index-8 failed.')
-  if (operator_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-8 failed.')
-  if (operator_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-9 failed.')
-  if (operator_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-10 failed.')
-  if (operator_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-11 failed.')
+  if (operator_index('asdfj76r58 ') /= 11) call fail('op-index-9 failed.')
+  if (operator_index('asdfj76r58=z73z242   ') /= 11) call fail('op-index-10 failed.')
+  if (operator_index('asdfj76r58 z73z242   ') /= 11) call fail('op-index-11 failed.')
+  if (operator_index('2.3.4 > 9.2.4') /= 6) call fail('op-index-12 failed.')
+  if (operator_index('2.3.4 > 9.2.4 <38 >>= 8') /= 6) call fail('op-index-13 failed.')
 
 !##################################try_satisfy#################################!
 
@@ -1314,11 +1314,11 @@ program test
   if (allocated(e)) call fail('try_satisfy-comp-34 should not fail.')
   if (.not. is_satisfied) call fail('try_satisfy-comp-34 should be true.')
   call v1%satisfies_comp(comparator_t('<', version_t(0, 1, 0, build='1')), is_satisfied, e)
-  if (allocated(e)) call fail('try_satisfy-comp-29 should not fail.')
-  if (is_satisfied) call fail('try_satisfy-comp-29 should not be true.')
+  if (allocated(e)) call fail('try_satisfy-comp-35 should not fail.')
+  if (is_satisfied) call fail('try_satisfy-comp-35 should not be true.')
   call v1%satisfies_comp(comparator_t('<=', version_t(0, 1, 0, build='1')), is_satisfied, e)
-  if (allocated(e)) call fail('try_satisfy-comp-30 should not fail.')
-  if (.not. is_satisfied) call fail('try_satisfy-comp-30 should be true.')
+  if (allocated(e)) call fail('try_satisfy-comp-36 should not fail.')
+  if (.not. is_satisfied) call fail('try_satisfy-comp-36 should be true.')
 
 !##############################satisfies_comp_set##############################!
 
