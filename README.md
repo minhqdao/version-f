@@ -194,7 +194,7 @@ end
 
 ## Strict mode
 
-In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are forbidden.
+In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden.
 
 ```fortran
 type(version_t) :: version

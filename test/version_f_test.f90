@@ -1701,6 +1701,23 @@ program test
   call v1%parse('0.0.0-alpha+build', e, strict_mode=.true.)
   if (allocated(e)) call fail(e%msg)
 
+  call v1%parse('01.2.3', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in major version.')
+
+  call v1%parse('1.02.3', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in minor version.')
+
+  call v1%parse('1.2.03', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in patch version.')
+
+  if (is_version('01.2.3', strict_mode=.true.)) call fail('Strict mode: Leading zero in major version accepted.')
+  if (is_version('1.02.3', strict_mode=.true.)) call fail('Strict mode: Leading zero in minor version accepted.')
+  if (is_version('1.2.03', strict_mode=.true.)) call fail('Strict mode: Leading zero in patch version accepted.')
+
+  call v1%parse('01.02.03', e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Leading zeroes should be accepted.')
+  if (v1%to_string() /= '1.2.3') call fail('No strict mode: Leading zeroes should be normalized.')
+
 !###################### is_greater overflow fallback ##########################!
 
   v1 = version_t(0, 0, 0, '99999999999')

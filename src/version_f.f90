@@ -390,8 +390,8 @@ contains
   !>
   !> Can be invoked by calling the default constructor.
   !>
-  !> In strict mode, all major, minor and patch versions must be provided. Implicit
-  !> zeros are forbidden in strict mode.
+  !> In strict mode, all major, minor and patch versions must be provided.
+  !> Implicit zeros and leading zeroes are forbidden in strict mode.
   function parse(str, strict_mode) result(version)
     character(*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
@@ -405,7 +405,7 @@ contains
 
   !> Attempt to parse a string into a version including prerelease and build
   !> data. In strict mode, all major, minor and patch versions must be provided.
-  !> Implicit zeros are forbidden in strict mode.
+  !> Implicit zeros and leading zeroes are forbidden in strict mode.
   subroutine try_parse(this, string, error, strict_mode)
     class(version_t), intent(out) :: this
     character(*), intent(in) :: string
@@ -478,6 +478,10 @@ contains
       if (is_strict_mode .and. i == 1) then
         error = error_t('Strict mode: Major version must be a number.'); return
       end if
+      if (is_strict_mode) then
+        call validate_core_number(str(1:i - 1), error)
+        if (allocated(error)) return
+      end if
       call s2int(str(1:i - 1), this%major, error)
       if (allocated(error)) return
       j = index(str(i + 1:l), '.')
@@ -491,13 +495,33 @@ contains
         if (is_strict_mode .and. j == 1) then
           error = error_t('Strict mode: Minor version must be a number.'); return
         end if
+        if (is_strict_mode) then
+          call validate_core_number(str(i + 1:i + j - 1), error)
+          if (allocated(error)) return
+        end if
         call s2int(str(i + 1:i + j - 1), this%minor, error)
         if (allocated(error)) return
         if (is_strict_mode .and. len(str) == i + j) then
           error = error_t('Strict mode: Patch version must be a number.'); return
         end if
+        if (is_strict_mode) then
+          call validate_core_number(str(i + j + 1:l), error)
+          if (allocated(error)) return
+        end if
         call s2int(str(i + j + 1:l), this%patch, error)
         if (allocated(error)) return
+      end if
+    end if
+  end
+
+  !> Reject leading zeroes in a major, minor or patch number.
+  pure subroutine validate_core_number(str, error)
+    character(*), intent(in) :: str
+    type(error_t), allocatable, intent(out) :: error
+
+    if (len(str) > 1) then
+      if (str(1:1) == '0') then
+        error = error_t('Strict mode: Version numbers must not contain leading zeroes.')
       end if
     end if
   end
