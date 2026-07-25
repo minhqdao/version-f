@@ -6,7 +6,7 @@ module version_f
   private
 
   public :: version_t, string_t, error_t, is_version, version_range_t, &
-            comparator_set_t, comparator_t, operator_index
+            comparator_set_t, comparator_t
 
   type :: string_t
     character(:), allocatable :: str
