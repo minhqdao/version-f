@@ -81,7 +81,7 @@ call version%create(0, 1, 0, 'alpha', '1', error)
 call version%parse('0.1.0-alpha+1', error)
 ```
 
-## Prerelase labels
+## Prerelease labels
 
 `prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented. A `prerelease` can be [incremented](#increment-versions).
 
@@ -253,7 +253,7 @@ print *, v1%is_stable() ! false
 
 ## is_exactly()
 
-The `is_exactly()` function has been added for convencience and isn't part of the original Semantic Versioning 2.0.0 specification. It is `true` if both versions are equal _including_ the `build` metadata.
+The `is_exactly()` function has been added for convenience and isn't part of the original Semantic Versioning 2.0.0 specification. It is `true` if both versions are equal _including_ the `build` metadata.
 
 ```fortran
 v1 = version_t(0, 1, 0, 'a', '1')
