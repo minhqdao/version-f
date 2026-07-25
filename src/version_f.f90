@@ -31,8 +31,13 @@ module version_f
 
   contains
 
-    procedure :: to_string, major, minor, patch, prerelease, build, &
-    & increment_major, increment_minor, increment_patch, &
+    procedure :: to_string
+    procedure :: major => get_major
+    procedure :: minor => get_minor
+    procedure :: patch => get_patch
+    procedure :: prerelease => get_prerelease
+    procedure :: build => get_build
+    procedure :: increment_major, increment_minor, increment_patch, &
     & increment_prerelease, increment_build, try_increment_major, &
     & try_increment_minor, try_increment_patch, try_increment_prerelease, &
     & try_increment_build, is_exactly, satisfies, try_satisfy, &
@@ -295,28 +300,28 @@ contains
   end
 
   !> Return the major version number.
-  elemental integer function major(this)
+  elemental integer function get_major(this)
     class(version_t), intent(in) :: this
 
-    major = this%major_
+    get_major = this%major_
   end
 
   !> Return the minor version number.
-  elemental integer function minor(this)
+  elemental integer function get_minor(this)
     class(version_t), intent(in) :: this
 
-    minor = this%minor_
+    get_minor = this%minor_
   end
 
   !> Return the patch version number.
-  elemental integer function patch(this)
+  elemental integer function get_patch(this)
     class(version_t), intent(in) :: this
 
-    patch = this%patch_
+    get_patch = this%patch_
   end
 
   !> Return the dot-separated prerelease identifiers.
-  pure function prerelease(this) result(str)
+  pure function get_prerelease(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
 
@@ -328,7 +333,7 @@ contains
   end
 
   !> Return the dot-separated build identifiers.
-  pure function build(this) result(str)
+  pure function get_build(this) result(str)
     class(version_t), intent(in) :: this
     character(:), allocatable :: str
 
@@ -820,7 +825,7 @@ contains
     ! Multi-digit numerical prerelease identifiers must not start with zero.
     if (is_prerelease .and. len(str) > 1) then
       if (is_numerical(str) .and. str(1:1) == '0') then
-        error = error_t("Numerical prerelease identifiers must not contain leading zeroes."); return
+        error = error_t('Numerical prerelease identifiers must not contain leading zeroes.'); return
       end if
     end if
   end

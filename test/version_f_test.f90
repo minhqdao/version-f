@@ -1,6 +1,6 @@
 program test
-  use iso_fortran_env, only: int64
-  use version_f
+  use, intrinsic :: iso_fortran_env, only: int64
+  use version_f, only: error_t, is_version, version_range_t, version_t
 
   implicit none
 
@@ -985,13 +985,13 @@ program test
   call v1%parse('1.2', e, strict_mode=.false.)
   if (allocated(e)) call fail('No strict mode: Has implicit major, minor and patch.')
 
-  if (is_version('1', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
-  if (is_version('1+123', strict_mode=.true.)) call fail("Strict mode: Missing minor and patch.")
-  if (is_version('1.0+123', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
-  if (is_version('1.0', strict_mode=.true.)) call fail("Strict mode: Missing patch.")
-  if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail("Strict mode: Is valid version.")
-  if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
-  if (.not. is_version('11.0', strict_mode=.false.)) call fail("No strict mode: Is valid version.")
+  if (is_version('1', strict_mode=.true.)) call fail('Strict mode: Missing minor and patch.')
+  if (is_version('1+123', strict_mode=.true.)) call fail('Strict mode: Missing minor and patch.')
+  if (is_version('1.0+123', strict_mode=.true.)) call fail('Strict mode: Missing patch.')
+  if (is_version('1.0', strict_mode=.true.)) call fail('Strict mode: Missing patch.')
+  if (.not. is_version('1.0.0+123', strict_mode=.true.)) call fail('Strict mode: Is valid version.')
+  if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail('No strict mode: Is valid version.')
+  if (.not. is_version('11.0', strict_mode=.false.)) call fail('No strict mode: Is valid version.')
 
 !##################################try_satisfy#################################!
 
