@@ -5,21 +5,14 @@ module version_f
   implicit none
   private
 
-  public :: version_t, string_t, error_t, is_version, version_range_t, &
-            comparator_set_t, comparator_t
+  public :: version_t, error_t, is_version, version_range_t
 
   type :: string_t
     character(:), allocatable :: str
   contains
-    generic :: num => string_t_2i
-    procedure, private :: string_t_2i
     generic :: is_numeric => string_t_is_numeric
     procedure, private :: string_t_is_numeric
   end type
-
-  interface string_t
-    module procedure :: create_string_t
-  end interface
 
   !> Contains all version information.
   type :: version_t
@@ -43,13 +36,15 @@ module version_f
     & increment_prerelease, increment_build, try_increment_major, &
     & try_increment_minor, try_increment_patch, try_increment_prerelease, &
     & try_increment_build, is_exactly, satisfies, try_satisfy, &
-    & satisfies_comp_set, satisfies_comp, is_stable
+    & is_stable
 
     generic :: create => try_create
     procedure, private :: try_create
 
     generic :: parse => try_parse
     procedure, private :: try_parse
+
+    procedure, private :: satisfies_comp_set, satisfies_comp
 
     generic :: operator(==) => equals
     procedure, private :: equals
@@ -75,7 +70,10 @@ module version_f
   end interface
 
   type :: error_t
-    character(:), allocatable :: msg
+    private
+    character(:), allocatable :: msg_
+  contains
+    procedure :: message => error_message
   end type
 
   interface error_t
@@ -83,36 +81,29 @@ module version_f
   end interface
 
   type :: comparator_t
+    private
     character(:), allocatable :: op
     type(version_t) :: version
   contains
     procedure, private :: parse_comp_and_crop_str
   end type
 
-  interface comparator_t
-    module procedure :: create_comp
-  end interface
-
   type :: comparator_set_t
+    private
     type(comparator_t), allocatable :: comps(:)
   contains
     generic :: parse => parse_comp_set
     procedure, private :: parse_comp_set
-    generic :: extend_with => extend_comps
-    procedure, private :: extend_comps
   end type
 
-  interface comparator_set_t
-    module procedure :: create_comp_set
-  end interface
-
   type :: version_range_t
+    private
     type(comparator_set_t), allocatable :: comp_sets(:)
   contains
     generic :: parse => parse_version_range
     procedure, private :: parse_version_range
-    generic :: extend_with => extend_comp_sets
-    procedure, private :: extend_comp_sets
+    procedure :: satisfies => range_satisfies
+    procedure :: try_satisfy => range_try_satisfy
   end type
 
 contains
@@ -134,7 +125,7 @@ contains
     type(error_t), allocatable :: error
 
     call try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Create a version from individual major, minor, patch, prerelease and build
@@ -326,28 +317,53 @@ contains
     patch = this%patch_
   end
 
-  !> Return a copy of the prerelease identifiers.
-  pure function prerelease(this) result(identifiers)
+  !> Return the dot-separated prerelease identifiers.
+  pure function prerelease(this) result(str)
     class(version_t), intent(in) :: this
-    type(string_t), allocatable :: identifiers(:)
+    character(:), allocatable :: str
 
     if (allocated(this%prerelease_)) then
-      identifiers = this%prerelease_
+      str = identifiers_string(this%prerelease_)
     else
-      allocate (identifiers(0))
+      str = ''
     end if
   end
 
-  !> Return a copy of the build identifiers.
-  pure function build(this) result(identifiers)
+  !> Return the dot-separated build identifiers.
+  pure function build(this) result(str)
     class(version_t), intent(in) :: this
-    type(string_t), allocatable :: identifiers(:)
+    character(:), allocatable :: str
 
     if (allocated(this%build_)) then
-      identifiers = this%build_
+      str = identifiers_string(this%build_)
     else
-      allocate (identifiers(0))
+      str = ''
     end if
+  end
+
+  !> Join an array of identifiers with dots.
+  pure function identifiers_string(identifiers) result(str)
+    type(string_t), intent(in) :: identifiers(:)
+    character(:), allocatable :: str
+
+    integer :: i, n, pos
+
+    n = 0
+    do i = 1, size(identifiers)
+      n = n + len(identifiers(i)%str)
+      if (i < size(identifiers)) n = n + 1
+    end do
+
+    allocate (character(n) :: str)
+    pos = 1
+    do i = 1, size(identifiers)
+      str(pos:pos + len(identifiers(i)%str) - 1) = identifiers(i)%str
+      pos = pos + len(identifiers(i)%str)
+      if (i < size(identifiers)) then
+        str(pos:pos) = '.'
+        pos = pos + 1
+      end if
+    end do
   end
 
   !> Increments the major version number and resets the minor and patch number
@@ -360,7 +376,7 @@ contains
     type(error_t), allocatable :: error
 
     call this%try_increment_major(error)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to increment the major version, reporting overflow through `error`.
@@ -387,7 +403,7 @@ contains
     type(error_t), allocatable :: error
 
     call this%try_increment_minor(error)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to increment the minor version, reporting overflow through `error`.
@@ -412,7 +428,7 @@ contains
     type(error_t), allocatable :: error
 
     call this%try_increment_patch(error)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to increment the patch version, reporting overflow through `error`.
@@ -436,7 +452,7 @@ contains
     type(error_t), allocatable :: error
 
     call this%try_increment_prerelease(error)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to increment prerelease data, reporting overflow through `error`.
@@ -461,7 +477,7 @@ contains
     type(error_t), allocatable :: error
 
     call this%try_increment_build(error)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to increment build metadata, reporting overflow through `error`.
@@ -531,7 +547,7 @@ contains
     type(error_t), allocatable :: error
 
     call version%parse(str, error, strict_mode)
-    if (allocated(error)) error stop error%msg
+    if (allocated(error)) error stop error%msg_
   end
 
   !> Attempt to parse a string into a version including prerelease and build
@@ -682,26 +698,6 @@ contains
         error = error_t("Contains non-digit: '"//str//"'."); return
       end if
     end do
-  end
-
-  !> Wrapper function for `s2int`.
-  elemental integer function s2i(str)
-    character(*), intent(in) :: str
-
-    type(error_t), allocatable :: e
-
-    call s2int(str, s2i, e)
-    if (allocated(e)) error stop e%msg
-  end
-
-  !> Convert a `string_t` to an integer.
-  elemental integer function string_t_2i(this)
-    class(string_t), intent(in) :: this
-
-    type(error_t), allocatable :: e
-
-    call s2int(this%str, string_t_2i, e)
-    if (allocated(e)) error stop e%msg
   end
 
   !> Convert an integer to a string.
@@ -1057,18 +1053,6 @@ contains
     is_version = .not. allocated(error)
   end
 
-  !> Helper function to generate a new `string_t` instance.
-  elemental function create_string_t(inp_str) result(string)
-
-    !> Input string.
-    character(*), intent(in) :: inp_str
-
-    !> The string instance.
-    type(string_t) :: string
-
-    string%str = inp_str
-  end
-
   !> Helper function to generate a new `error_t` instance.
   elemental function create_error_t(msg) result(err)
 
@@ -1078,7 +1062,19 @@ contains
     !> The error instance.
     type(error_t) :: err
 
-    err%msg = msg
+    err%msg_ = msg
+  end
+
+  !> Return the error message.
+  pure function error_message(this) result(msg)
+    class(error_t), intent(in) :: this
+    character(:), allocatable :: msg
+
+    if (allocated(this%msg_)) then
+      msg = this%msg_
+    else
+      msg = ''
+    end if
   end
 
   !> Determine whether the version meets the comparison expressed in `str`.
@@ -1122,7 +1118,6 @@ contains
 
     character(:), allocatable :: str
     type(version_range_t) :: version_range
-    integer :: i
 
     str = trim(adjustl(string))
 
@@ -1133,10 +1128,7 @@ contains
     call version_range%parse(str, error)
     if (allocated(error)) return
 
-    do i = 1, size(version_range%comp_sets)
-      call this%satisfies_comp_set(version_range%comp_sets(i), is_satisfied, error)
-      if (is_satisfied .or. allocated(error)) return
-    end do
+    call version_range%try_satisfy(this, is_satisfied, error)
   end
 
   !> Convenience function to determine whether the version meets the comparison.
@@ -1155,6 +1147,37 @@ contains
 
     call this%try_satisfy(str, satisfies, error)
     if (allocated(error)) satisfies = .false.
+  end
+
+  !> Determine whether `version` satisfies this parsed range.
+  pure subroutine range_try_satisfy(this, version, is_satisfied, error)
+    class(version_range_t), intent(in) :: this
+    type(version_t), intent(in) :: version
+    logical, intent(out) :: is_satisfied
+    type(error_t), allocatable, intent(out) :: error
+
+    integer :: i
+
+    is_satisfied = .false.
+    if (.not. allocated(this%comp_sets)) then
+      error = error_t('Version range has not been parsed.'); return
+    end if
+
+    do i = 1, size(this%comp_sets)
+      call version%satisfies_comp_set(this%comp_sets(i), is_satisfied, error)
+      if (is_satisfied .or. allocated(error)) return
+    end do
+  end
+
+  !> Return true if `version` satisfies this parsed range.
+  pure logical function range_satisfies(this, version)
+    class(version_range_t), intent(in) :: this
+    type(version_t), intent(in) :: version
+
+    type(error_t), allocatable :: error
+
+    call this%try_satisfy(version, range_satisfies, error)
+    if (allocated(error)) range_satisfies = .false.
   end
 
   !> Create sets of comparators that are separated by `||`. An example of a
@@ -1206,19 +1229,6 @@ contains
     call comp_set%parse_comp_set(str, error)
     if (allocated(error)) return
     this%comp_sets(idx) = comp_set
-  end
-
-  !> Extend array of comparator sets within version range with another comparator.
-  subroutine extend_comp_sets(range, comp_set)
-    class(version_range_t), intent(inout) :: range
-    type(comparator_set_t), intent(in) :: comp_set
-
-    type(comparator_set_t), allocatable :: tmp(:)
-
-    allocate (tmp(size(range%comp_sets) + 1))
-    tmp(1:size(range%comp_sets)) = range%comp_sets
-    tmp(size(tmp)) = comp_set
-    call move_alloc(tmp, range%comp_sets)
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
@@ -1318,19 +1328,6 @@ contains
       if (str == '') return
       str = trim(adjustl(str))
     end do
-  end
-
-  !> Extend array of comparators within comparator set with another comparator.
-  subroutine extend_comps(set, comp)
-    class(comparator_set_t), intent(inout) :: set
-    type(comparator_t), intent(in) :: comp
-
-    type(comparator_t), allocatable :: tmp(:)
-
-    allocate (tmp(size(set%comps) + 1))
-    tmp(1:size(set%comps)) = set%comps
-    tmp(size(tmp)) = comp
-    call move_alloc(tmp, set%comps)
   end
 
   !> Create a comparator from a string. A comparator consists of an operator and
@@ -1446,35 +1443,6 @@ contains
       is_satisfied = .false.
       error = error_t("Invalid operator: '"//comparator%op//"'.")
     end if
-  end
-
-  !> Create instance of `comparator_t` using an operator (`op`) and a version.
-  elemental function create_comp(op, version) result(comparator)
-
-    !> The operator of the comparator.
-    character(*), intent(in) :: op
-
-    !> The version of the comparator.
-    type(version_t), intent(in) :: version
-
-    !> Instance of `comparator_t` created from `op` and `version`.
-    type(comparator_t) :: comparator
-
-    comparator%op = op
-    comparator%version = version
-  end
-
-  !> Create instance of `comparator_set_t` using an array of comparators.
-  pure function create_comp_set(comps) result(comp_set)
-
-    !> Array of comparators to create the set from.
-    type(comparator_t), intent(in) :: comps(:)
-
-    !> Instance of `comparator_set_t` created from `comps`.
-    type(comparator_set_t) :: comp_set
-
-    allocate (comp_set%comps(size(comps)))
-    comp_set%comps = comps
   end
 
   !> Returns true if the version is stable. A version is stable if its major
