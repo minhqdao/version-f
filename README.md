@@ -40,7 +40,7 @@ The components of `version_t` are private so that a version cannot be placed in
 an invalid state through direct assignment. Use `major()`, `minor()`, `patch()`,
 `prerelease()` and `build()` to inspect them. A default
 constructed `version_t` is initialized to `0.0.0`. Identifier accessors return
-copies, using an empty array when no identifiers are present.
+dot-separated strings, or an empty string when no identifiers are present.
 
 ### make
 
@@ -203,6 +203,15 @@ program main
 end
 ```
 
+Parse a `version_range_t` once to reuse it:
+
+```fortran
+type(version_range_t) :: range
+
+call range%parse('>=1.0.0 <2.0.0', error)
+print *, range%satisfies(version_t(1, 5, 0)) ! true
+```
+
 ## Strict mode
 
 In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden. Without strict mode, missing numbers become zero. Input is trimmed in both modes.
@@ -248,7 +257,7 @@ procedure to handle the error instead:
 type(error_t), allocatable :: error
 
 call version%try_increment_major(error)
-if (allocated(error)) print *, error%msg
+if (allocated(error)) print *, error%message()
 ```
 
 ## is_version()
@@ -353,6 +362,13 @@ indentation width of 2 or run `fprettify -i 2 -r .` before committing.
 Feel free to [create an issue](https://github.com/minhqdao/version-f/issues) in case you found a bug, have any questions or
 want to propose further improvements. Please stick to the existing coding style
 when you open a pull request.
+
+## API stability
+
+Before version 1.0, public APIs may change in minor releases. Breaking changes
+will be noted in the release notes. Deprecated APIs will be kept for one minor
+release when practical. After version 1.0, breaking changes require a new major
+version.
 
 ## License
 
