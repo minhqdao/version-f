@@ -505,7 +505,7 @@ contains
 
     integer :: digits, tmp
 
-    tmp = num
+    tmp = abs(num)
     digits = 0
 
     do
@@ -513,6 +513,8 @@ contains
       tmp = tmp/10
       if (tmp == 0) exit
     end do
+
+    if (num < 0) digits = digits + 1
 
     allocate (character(digits) :: str)
     write (str, '(I0)') num

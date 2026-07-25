@@ -432,6 +432,13 @@ program test
   call v1%parse('2147483648.0.0', e)
   if (.not. allocated(e)) call fail('Overflow at huge(0)+1 not caught.')
 
+  v1%major = -1
+  if (v1%to_string() /= '-1.0.0') call fail("Negative major failed for '"//v1%to_string()//"'")
+  v1%minor = -2
+  if (v1%to_string() /= '-1.-2.0') call fail("Negative minor failed for '"//v1%to_string()//"'")
+  v1%patch = -3
+  if (v1%to_string() /= '-1.-2.-3') call fail("Negative patch failed for '"//v1%to_string()//"'")
+
   v1 = version_t(1, 2, 3)
   v2 = version_t(1, 2, 3)
   if (.not. v1 == v2) call fail('Equality failed.')
