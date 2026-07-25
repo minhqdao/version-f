@@ -84,8 +84,6 @@ module version_f
     private
     character(:), allocatable :: op
     type(version_t) :: version
-  contains
-    procedure, private :: parse_comp_and_crop_str
   end type
 
   type :: comparator_set_t
@@ -724,13 +722,16 @@ contains
 
   !> Validate prerelease or build identifier string without allocating. Uses an
   !> ASCII lookup table for O(1) character validation instead of O(m) scans.
-  pure subroutine validate_identifiers(str, is_prerelease, error)
+  pure subroutine validate_identifiers(str, is_prerelease, error, n_identifiers)
     character(*), intent(in) :: str
     logical, intent(in) :: is_prerelease
     type(error_t), allocatable, intent(out) :: error
+    integer, optional, intent(out) :: n_identifiers
 
-    integer :: i, c, start, length
+    integer :: i, c, start, n
     logical :: valid(0:127)
+
+    if (present(n_identifiers)) n_identifiers = 0
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
@@ -744,6 +745,8 @@ contains
     valid(ichar('-')) = .true.
     valid(ichar('.')) = .true.
 
+    start = 1
+    n = 1
     do i = 1, len(str)
       c = ichar(str(i:i))
       if (c < 0 .or. c > 127) then
@@ -752,26 +755,23 @@ contains
       if (.not. valid(c)) then
         error = error_t("Invalid character in '"//str//"'."); return
       end if
-    end do
-
-    ! Last character must not be a dot.
-    if (str(len(str):len(str)) == '.') then
-      error = error_t('Identifier must not end with a dot.'); return
-    end if
-
-    ! Validate each identifier.
-    start = 1
-    do
-      length = index(str(start:), '.')
-      if (length == 0) then
-        call validate_identifier(str(start:), is_prerelease, error)
-        return
-      else
-        call validate_identifier(str(start:start + length - 2), is_prerelease, error)
+      if (str(i:i) == '.') then
+        if (i == start) then
+          error = error_t('Identifier must not be empty.'); return
+        end if
+        call validate_identifier(str(start:i - 1), is_prerelease, error)
         if (allocated(error)) return
-        start = start + length
+        start = i + 1
+        n = n + 1
       end if
     end do
+
+    if (start > len(str)) then
+      error = error_t('Identifier must not end with a dot.'); return
+    end if
+    call validate_identifier(str(start:), is_prerelease, error)
+    if (allocated(error)) return
+    if (present(n_identifiers)) n_identifiers = n
   end
 
   !> Check for valid prerelease or build data and build identifiers from
@@ -782,29 +782,23 @@ contains
     logical, intent(in) :: is_prerelease
     type(error_t), allocatable, intent(out) :: error
 
-    integer :: i, n, start, length
+    integer :: i, n, start, idx
 
-    call validate_identifiers(str, is_prerelease, error)
+    call validate_identifiers(str, is_prerelease, error, n)
     if (allocated(error)) return
-
-    ! Count identifiers.
-    n = 1
-    do i = 1, len_trim(str)
-      if (str(i:i) == '.') n = n + 1
-    end do
 
     allocate (ids(n))
 
     start = 1
-    do i = 1, n
-      length = index(str(start:), '.')
-      if (length == 0) then
-        ids(i)%str = str(start:)
-      else
-        ids(i)%str = str(start:start + length - 2)
-        start = start + length
+    idx = 1
+    do i = 1, len(str)
+      if (str(i:i) == '.') then
+        ids(idx)%str = str(start:i - 1)
+        idx = idx + 1
+        start = i + 1
       end if
     end do
+    ids(idx)%str = str(start:)
   end
 
   !> Validate an identifier.
@@ -937,21 +931,14 @@ contains
     type(string_t), intent(in) :: rhs(:)
 
     integer :: i, j
-    integer :: lhs_num, rhs_num
-    type(error_t), allocatable :: e
 
     do i = 1, min(size(lhs), size(rhs))
       if (lhs(i)%str == rhs(i)%str) cycle
       if (lhs(i)%is_numeric() .and. rhs(i)%is_numeric()) then
-        call s2int(lhs(i)%str, lhs_num, e)
-        if (allocated(e)) then
-          is_greater = lhs(i)%str > rhs(i)%str; return
+        if (len(lhs(i)%str) /= len(rhs(i)%str)) then
+          is_greater = len(lhs(i)%str) > len(rhs(i)%str); return
         end if
-        call s2int(rhs(i)%str, rhs_num, e)
-        if (allocated(e)) then
-          is_greater = lhs(i)%str > rhs(i)%str; return
-        end if
-        is_greater = lhs_num > rhs_num; return
+        is_greater = lhs(i)%str > rhs(i)%str; return
       else if (lhs(i)%is_numeric()) then
         is_greater = .false.; return
       else if (rhs(i)%is_numeric()) then
@@ -1194,39 +1181,47 @@ contains
     !> Error handling.
     type(error_t), allocatable, intent(out) :: error
 
-    integer :: i_sep, n_sets, idx
-    character(:), allocatable :: str
+    integer :: i, l, n_sets, idx, start
     type(comparator_set_t) :: comp_set
-
-    str = string
 
     ! Pre-count sets separated by ||.
     n_sets = 1
-    i_sep = index(str, '||')
-    do while (i_sep /= 0)
-      n_sets = n_sets + 1
-      str = str(i_sep + 2:)
-      i_sep = index(str, '||')
+    l = len(string)
+    i = 1
+    do while (i < l)
+      if (string(i:i + 1) == '||') then
+        n_sets = n_sets + 1
+        i = i + 2
+      else
+        i = i + 1
+      end if
     end do
 
     allocate (this%comp_sets(n_sets))
 
-    ! Parse each set and assign directly.
-    str = string
+    ! Parse each set directly from the original input.
     idx = 0
-
-    i_sep = index(str, '||')
-    do while (i_sep /= 0)
-      idx = idx + 1
-      call comp_set%parse_comp_set(str(1:i_sep - 1), error)
-      if (allocated(error)) return
-      this%comp_sets(idx) = comp_set
-      str = str(i_sep + 2:)
-      i_sep = index(str, '||')
+    start = 1
+    i = 1
+    do while (i < l)
+      if (string(i:i + 1) == '||') then
+        idx = idx + 1
+        call comp_set%parse_comp_set(string(start:i - 1), error)
+        if (allocated(error)) return
+        this%comp_sets(idx) = comp_set
+        start = i + 2
+        i = i + 2
+      else
+        i = i + 1
+      end if
     end do
 
     idx = idx + 1
-    call comp_set%parse_comp_set(str, error)
+    if (start <= l) then
+      call comp_set%parse_comp_set(string(start:l), error)
+    else
+      call comp_set%parse_comp_set('', error)
+    end if
     if (allocated(error)) return
     this%comp_sets(idx) = comp_set
   end
@@ -1247,7 +1242,7 @@ contains
 
     character(:), allocatable :: str
     type(comparator_t) :: comp
-    integer :: n_comps, idx, i, l
+    integer :: n_comps, idx, i, l, start
 
     str = trim(adjustl(string))
 
@@ -1291,94 +1286,61 @@ contains
 
     allocate (this%comps(n_comps))
 
-    ! Parse each comparator and assign directly.
+    ! Parse each comparator directly from the original string.
     idx = 0
-    do
-      if (len(str) == 0) then
-        call comp%parse_comp_and_crop_str('', str, error)
-      else if (str(1:1) == '>') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('>', str, error)
-        else if (str(2:2) == '=') then
-          call comp%parse_comp_and_crop_str('>=', str, error)
-        else
-          call comp%parse_comp_and_crop_str('>', str, error)
+    i = 1
+    do while (i <= l)
+      do while (i <= l)
+        if (str(i:i) /= ' ') exit
+        i = i + 1
+      end do
+      if (i > l) exit
+
+      comp%op = ''
+      if (str(i:i) == '>' .or. str(i:i) == '<') then
+        comp%op = str(i:i)
+        i = i + 1
+        if (i <= l) then
+          if (str(i:i) == '=') then
+            comp%op = comp%op//'='
+            i = i + 1
+          end if
         end if
-      else if (str(1:1) == '<') then
-        if (len(str) == 1) then
-          call comp%parse_comp_and_crop_str('<', str, error)
-        else if (str(2:2) == '=') then
-          call comp%parse_comp_and_crop_str('<=', str, error)
-        else
-          call comp%parse_comp_and_crop_str('<', str, error)
+      else if (str(i:i) == '=') then
+        comp%op = '='
+        i = i + 1
+      else if (str(i:i) == '!') then
+        if (i == l) then
+          error = error_t("Invalid operator: '!'."); return
         end if
-      else if (str(1:1) == '=') then
-        call comp%parse_comp_and_crop_str('=', str, error)
-      else if (len(str) == 1) then
-        call comp%parse_comp_and_crop_str('', str, error)
-      else if (str(1:2) == '!=') then
-        call comp%parse_comp_and_crop_str('!=', str, error)
-      else
-        call comp%parse_comp_and_crop_str('', str, error)
+        if (str(i + 1:i + 1) /= '=') then
+          error = error_t("Invalid operator: '!'."); return
+        end if
+        comp%op = '!='
+        i = i + 2
       end if
 
+      do while (i <= l)
+        if (str(i:i) /= ' ') exit
+        i = i + 1
+      end do
+
+      start = i
+      do while (i <= l)
+        if (str(i:i) == ' ' .or. str(i:i) == '>' .or. &
+            & str(i:i) == '<' .or. str(i:i) == '!' .or. &
+            & str(i:i) == '=') exit
+        i = i + 1
+      end do
+
+      if (start == i) then
+        error = error_t('Version must not be empty.'); return
+      end if
+      call comp%version%parse(str(start:i - 1), error)
       if (allocated(error)) return
       idx = idx + 1
       this%comps(idx) = comp
-      if (str == '') return
-      str = trim(adjustl(str))
     end do
-  end
-
-  !> Create a comparator from a string. A comparator consists of an operator and
-  !> a version. An example of a comparator is `>=1.2.3`.
-  subroutine parse_comp_and_crop_str(comp, op, str, error)
-
-    !> Comparator to be determined.
-    class(comparator_t), intent(out) :: comp
-
-    !> The operator of the comparator.
-    character(*), intent(in) :: op
-
-    !> Input string to be evaluated.
-    character(*), intent(inout) :: str
-
-    !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
-
-    integer :: i
-
-    comp%op = op
-    str = trim(adjustl(str(len(op) + 1:)))
-
-    i = operator_index(str)
-    if (i == 0) then
-      call comp%version%parse(str, error)
-      str = ''
-    else
-      call comp%version%parse(str(:i - 1), error)
-      str = str(i:)
-    end if
-    if (allocated(error)) return
-  end
-
-  !> Index of the first operator (`>`, `<`, `!`, `=` or ` `) within a string.
-  elemental integer function operator_index(str)
-
-    !> Input string to be evaluated.
-    character(*), intent(in) :: str
-
-    integer :: i
-    character :: char
-
-    do i = 1, len(str)
-      char = str(i:i)
-      if (char == '>' .or. char == '<' .or. char == '!' .or. char == '=' .or. char == ' ') then
-        operator_index = i; return
-      end if
-    end do
-
-    operator_index = 0
   end
 
   !> Attempt to evaluate a comparator set. A comparator set consists of multiple
