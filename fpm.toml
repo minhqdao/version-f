@@ -1,5 +1,5 @@
 name = "version-f"
-description = "Fortran implementation of Semantic Versioning 2.0"
+description = "Fortran implementation of Semantic Versioning 2.0.0"
 license = "Apache-2.0"
 version = "0.4.0"
 author = "Minh Dao"

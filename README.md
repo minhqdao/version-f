@@ -5,7 +5,7 @@
 [![CI](https://github.com/minhqdao/version-f/actions/workflows/ci.yml/badge.svg)](https://github.com/minhqdao/version-f/actions/workflows/ci.yml)
 
 
-This package provides a complete Fortran implementation of
+This package implements the version syntax and precedence rules from
 [Semantic Versioning 2.0.0](https://semver.org). It aims to be a user-friendly
 tool for handling versions in your Fortran projects.
 
@@ -170,6 +170,11 @@ Use the `satisfies`/`try_satisfy` procedures to verify whether a version meets a
 - `<`: Less than
 - `<=`: Less than or equal to
 
+Ranges use `version-f` syntax, not npm, Cargo or Python syntax. Partial versions
+are filled with zero and compared exactly, so `1.2` means `1.2.0`. Prereleases
+are not excluded automatically. Wildcards, caret, tilde and hyphen ranges are
+not supported.
+
 ```fortran
 program main
   use version_f
@@ -200,7 +205,7 @@ end
 
 ## Strict mode
 
-In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden.
+In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden. Without strict mode, missing numbers become zero. Input is trimmed in both modes.
 
 ```fortran
 type(version_t) :: version
