@@ -389,6 +389,46 @@ indentation width of 2 or run `fprettify -i 2 -r .` before committing.
 The CI also runs [Fortitude](https://github.com/PlasmaFAIR/fortitude). Make sure
 `fortitude check .` passes before committing.
 
+## Release process
+
+Releases are automatically published when tags are pushed, but version selection and preparation are
+manual:
+
+1. Create a release branch from an up-to-date `main`.
+2. Choose the next version according to Semantic Versioning.
+3. Update `version` in `fpm.toml` and both dependency tags in this README. CMake
+   reads its version from `fpm.toml`, so it requires no separate update.
+4. Document any breaking changes and run:
+
+   ```bash
+   fortitude check .
+   fprettify -i 2 -r . -d
+   fpm test --flag '-Wall -Wextra -fcheck=all -fbacktrace'
+   cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release
+   cmake --build build/cmake --config Release
+   ctest --test-dir build/cmake -C Release --output-on-failure
+   ```
+
+5. Commit the preparation, open a pull request and merge it into `main`.
+6. Wait for CI on the resulting `main` commit to pass. The release workflow
+   will reject a commit without a successful `main` CI run.
+7. Update the local branch and create an annotated tag on that exact commit:
+
+   ```bash
+   git switch main
+   git pull --ff-only
+   git tag -a v0.5.0 -m "version-f v0.5.0"
+   git push origin v0.5.0
+   ```
+
+8. Check the Release workflow and the generated GitHub release. It should
+   contain release notes, two source archives and `SHA256SUMS`.
+
+Replace `0.5.0` with the chosen version. If publishing fails only because CI
+was still running, wait for CI and rerun the Release job. An incorrect,
+unpublished tag may be deleted and recreated after fixing the release commit.
+Never move, delete or reuse a tag after its release has been published.
+
 ## Contribute
 
 Feel free to [create an issue](https://github.com/minhqdao/version-f/issues) in case you found a bug, have any questions or
