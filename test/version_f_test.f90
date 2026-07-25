@@ -415,6 +415,23 @@ program test
 
 !################################## Compare ###################################!
 
+  call v1%parse('99999999999.0.0', e)
+  if (.not. allocated(e)) call fail('Overflow in major version not caught.')
+
+  call v1%parse('0.99999999999.0', e)
+  if (.not. allocated(e)) call fail('Overflow in minor version not caught.')
+
+  call v1%parse('0.0.99999999999', e)
+  if (.not. allocated(e)) call fail('Overflow in patch version not caught.')
+
+  v1 = version_t(2147483647, 0, 0)
+  if (v1%to_string() /= '2147483647.0.0') then
+    call fail("Parsing failed for '"//v1%to_string()//"'")
+  end if
+
+  call v1%parse('2147483648.0.0', e)
+  if (.not. allocated(e)) call fail('Overflow at huge(0)+1 not caught.')
+
   v1 = version_t(1, 2, 3)
   v2 = version_t(1, 2, 3)
   if (.not. v1 == v2) call fail('Equality failed.')

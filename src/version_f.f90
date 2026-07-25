@@ -464,7 +464,14 @@ contains
     do i = 1, len(str)
       c = str(i:i)
       if (c >= '0' .and. c <= '9') then
-        num = num*10 + index('0123456789', c) - 1
+        block
+          integer :: digit
+          digit = index('0123456789', c) - 1
+          if (num > (huge(num) - digit)/10) then
+            error = error_t("Integer overflow in: '"//str//"'."); return
+          end if
+          num = num*10 + digit
+        end block
       else
         error = error_t("Contains non-digit: '"//str//"'."); return
       end if
