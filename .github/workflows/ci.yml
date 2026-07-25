@@ -188,12 +188,12 @@ jobs:
           python-version: "3.13"
       - name: Run tests with coverage
         run: |
-          pip install gcovr==8.6
+          pip install gcovr
           fpm test --build-dir build/coverage-fpm --flag '--coverage -O0 -g' --link-flag '--coverage'
           mkdir -p build/coverage
           gcovr --root . --filter src/ --gcov-executable gcov-15 --fail-under-line 1 --txt --cobertura build/coverage/coverage.xml --html-details build/coverage/index.html
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           disable_search: true
           fail_ci_if_error: true
