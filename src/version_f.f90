@@ -141,7 +141,8 @@ contains
   !> Prelease and build versions are entered through a series of dot-separated
   !> identifiers. The identifiers must be composed of ASCII letters, digits or
   !> hyphens. They must not be empty and must not begin or end with
-  !> with a dot. Numerical identifiers must not start with a zero.
+  !> with a dot. Multi-digit numerical prerelease identifiers must not start
+  !> with a zero. Build identifiers may contain leading zeroes.
   !>
   !> Valid examples:
   !>
@@ -218,12 +219,12 @@ contains
     end if
 
     if (present(prerelease)) then
-      call build_identifiers(this%prerelease, prerelease, error)
+      call build_identifiers(this%prerelease, prerelease, .true., error)
       if (allocated(error)) return
     end if
 
     if (present(build)) then
-      call build_identifiers(this%build, build, error)
+      call build_identifiers(this%build, build, .false., error)
       if (allocated(error)) return
     end if
   end
@@ -389,8 +390,8 @@ contains
   !>
   !> Can be invoked by calling the default constructor.
   !>
-  !> In strict mode, all major, minor and patch versions must be provided. Implicit
-  !> zeros are forbidden in strict mode.
+  !> In strict mode, all major, minor and patch versions must be provided.
+  !> Implicit zeros and leading zeroes are forbidden in strict mode.
   function parse(str, strict_mode) result(version)
     character(*), intent(in) :: str
     logical, optional, intent(in) :: strict_mode
@@ -404,7 +405,7 @@ contains
 
   !> Attempt to parse a string into a version including prerelease and build
   !> data. In strict mode, all major, minor and patch versions must be provided.
-  !> Implicit zeros are forbidden in strict mode.
+  !> Implicit zeros and leading zeroes are forbidden in strict mode.
   subroutine try_parse(this, string, error, strict_mode)
     class(version_t), intent(out) :: this
     character(*), intent(in) :: string
@@ -424,17 +425,17 @@ contains
     else if (i /= 0 .and. j == 0) then
       call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), error); return
+      call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), .true., error); return
     else if ((i == 0 .and. j /= 0) .or. ((i /= 0 .and. j /= 0) .and. (i > j))) then
       call build_mmp(this, str(1:j - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), error); return
+      call build_identifiers(this%build, str(j + 1:len_trim(str)), .false., error); return
     else if (i /= 0 .and. j /= 0) then
       call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease, str(i + 1:j - 1), error)
+      call build_identifiers(this%prerelease, str(i + 1:j - 1), .true., error)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), error); return
+      call build_identifiers(this%build, str(j + 1:len_trim(str)), .false., error); return
     end if
   end
 
@@ -477,6 +478,10 @@ contains
       if (is_strict_mode .and. i == 1) then
         error = error_t('Strict mode: Major version must be a number.'); return
       end if
+      if (is_strict_mode) then
+        call validate_core_number(str(1:i - 1), error)
+        if (allocated(error)) return
+      end if
       call s2int(str(1:i - 1), this%major, error)
       if (allocated(error)) return
       j = index(str(i + 1:l), '.')
@@ -490,13 +495,33 @@ contains
         if (is_strict_mode .and. j == 1) then
           error = error_t('Strict mode: Minor version must be a number.'); return
         end if
+        if (is_strict_mode) then
+          call validate_core_number(str(i + 1:i + j - 1), error)
+          if (allocated(error)) return
+        end if
         call s2int(str(i + 1:i + j - 1), this%minor, error)
         if (allocated(error)) return
         if (is_strict_mode .and. len(str) == i + j) then
           error = error_t('Strict mode: Patch version must be a number.'); return
         end if
+        if (is_strict_mode) then
+          call validate_core_number(str(i + j + 1:l), error)
+          if (allocated(error)) return
+        end if
         call s2int(str(i + j + 1:l), this%patch, error)
         if (allocated(error)) return
+      end if
+    end if
+  end
+
+  !> Reject leading zeroes in a major, minor or patch number.
+  pure subroutine validate_core_number(str, error)
+    character(*), intent(in) :: str
+    type(error_t), allocatable, intent(out) :: error
+
+    if (len(str) > 1) then
+      if (str(1:1) == '0') then
+        error = error_t('Strict mode: Version numbers must not contain leading zeroes.')
       end if
     end if
   end
@@ -572,8 +597,9 @@ contains
 
   !> Validate prerelease or build identifier string without allocating. Uses an
   !> ASCII lookup table for O(1) character validation instead of O(m) scans.
-  pure subroutine validate_identifiers(str, error)
+  pure subroutine validate_identifiers(str, is_prerelease, error)
     character(*), intent(in) :: str
+    logical, intent(in) :: is_prerelease
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i, c, start, length
@@ -608,10 +634,10 @@ contains
     do
       length = index(str(start:), '.')
       if (length == 0) then
-        call validate_identifier(str(start:), error)
+        call validate_identifier(str(start:), is_prerelease, error)
         return
       else
-        call validate_identifier(str(start:start + length - 2), error)
+        call validate_identifier(str(start:start + length - 2), is_prerelease, error)
         if (allocated(error)) return
         start = start + length
       end if
@@ -620,14 +646,15 @@ contains
 
   !> Check for valid prerelease or build data and build identifiers from
   !> the string.
-  pure subroutine build_identifiers(ids, str, error)
+  pure subroutine build_identifiers(ids, str, is_prerelease, error)
     type(string_t), allocatable, intent(out) :: ids(:)
     character(*), intent(in) :: str
+    logical, intent(in) :: is_prerelease
     type(error_t), allocatable, intent(out) :: error
 
     integer :: i, n, start, length
 
-    call validate_identifiers(str, error)
+    call validate_identifiers(str, is_prerelease, error)
     if (allocated(error)) return
 
     ! Count identifiers.
@@ -651,8 +678,9 @@ contains
   end
 
   !> Validate an identifier.
-  pure subroutine validate_identifier(str, error)
+  pure subroutine validate_identifier(str, is_prerelease, error)
     character(*), intent(in) :: str
+    logical, intent(in) :: is_prerelease
     type(error_t), allocatable, intent(out) :: error
 
     ! Empty identifiers are not allowed.
@@ -665,9 +693,11 @@ contains
       error = error_t("Identifiers must not start with '.'"); return
     end if
 
-    ! Numerical identifiers must not start with 0.
-    if (is_numerical(str) .and. str(1:1) == '0') then
-      error = error_t("Numerical identifiers must not start with '0'."); return
+    ! Multi-digit numerical prerelease identifiers must not start with zero.
+    if (is_prerelease .and. len(str) > 1) then
+      if (is_numerical(str) .and. str(1:1) == '0') then
+        error = error_t("Numerical prerelease identifiers must not contain leading zeroes."); return
+      end if
     end if
   end
 
@@ -859,18 +889,18 @@ contains
     else if (i /= 0 .and. j == 0) then
       call build_mmp(version, trimmed(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call validate_identifiers(trimmed(i + 1:len_trim(trimmed)), error)
+      call validate_identifiers(trimmed(i + 1:len_trim(trimmed)), .true., error)
     else if ((i == 0 .and. j /= 0) .or. &
             & ((i /= 0 .and. j /= 0) .and. (i > j))) then
       call build_mmp(version, trimmed(1:j - 1), error, strict_mode)
       if (allocated(error)) return
-      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), error)
+      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), .false., error)
     else if (i /= 0 .and. j /= 0) then
       call build_mmp(version, trimmed(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call validate_identifiers(trimmed(i + 1:j - 1), error)
+      call validate_identifiers(trimmed(i + 1:j - 1), .true., error)
       if (allocated(error)) return
-      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), error)
+      call validate_identifiers(trimmed(j + 1:len_trim(trimmed)), .false., error)
     end if
   end
 

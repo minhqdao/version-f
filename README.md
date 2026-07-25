@@ -104,7 +104,7 @@ call v1%increment_prerelease() ! 0.5.4-2
 
 ## Build metadata
 
-`build` metadata can be included and will be appended after the `patch` or the `prerelease` via a `+` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. `build` data is not used for comparison and it is cleared every time a `major`, `minor`, `patch` or `prerelease` version is incremented. A `build` value can be [incremented](#increment-versions).
+`build` metadata can be included and will be appended after the `patch` or the `prerelease` via a `+` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Build identifiers may contain leading zeroes. `build` data is not used for comparison and it is cleared every time a `major`, `minor`, `patch` or `prerelease` version is incremented. A `build` value can be [incremented](#increment-versions).
 
 ```fortran
 type(version_t) :: v1, v2
@@ -194,7 +194,7 @@ end
 
 ## Strict mode
 
-In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros are forbidden.
+In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden.
 
 ```fortran
 type(version_t) :: version

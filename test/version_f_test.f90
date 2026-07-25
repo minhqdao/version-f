@@ -88,7 +88,8 @@ program test
   if (.not. allocated(e)) call fail('Invalid prerelease missed.')
 
   call v1%create(1, prerelease='abc.ded', build='05567.abc', error=e)
-  if (.not. allocated(e)) call fail('Invalid build missed.')
+  if (allocated(e)) call fail('Numeric build identifier with leading zeroes should be valid.')
+  if (v1%to_string() /= '1.0.0-abc.ded+05567.abc') call fail('Build identifier with leading zeroes changed.')
 
   v1 = version_t(0, 1, 0, prerelease='abc.def---', build='0---789.abc')
   if (v1%to_string() /= '0.1.0-abc.def---+0---789.abc') then
@@ -132,7 +133,7 @@ program test
   end if
 
   call v1%create(1, prerelease='d', build='9.0', error=e)
-  if (.not. allocated(e)) call fail('Invalid build missed.')
+  if (allocated(e)) call fail('Zero build identifier should be valid.')
 
 !################################# Increment ##################################!
 
@@ -383,16 +384,18 @@ program test
   end if
 
   call v1%parse('1-0', e)
-  if (.not. allocated(e)) call fail('Leading zero identifier not allowed.')
+  if (allocated(e)) call fail('A single zero prerelease identifier should be valid.')
 
   call v1%parse('1-hff.08', e)
   if (.not. allocated(e)) call fail('Leading zero identifier not allowed.')
 
   call v1%parse('1-hff.87+08', e)
-  if (.not. allocated(e)) call fail('Leading zero identifier not allowed.')
+  if (allocated(e)) call fail('Build identifier with leading zeroes should be valid.')
+  if (v1%to_string() /= '1.0.0-hff.87+08') call fail('Build identifier with leading zeroes changed.')
 
   call v1%parse('1-hff.87+fejf.08', e)
-  if (.not. allocated(e)) call fail('Leading zero identifier not allowed.')
+  if (allocated(e)) call fail('Build identifier with leading zeroes should be valid.')
+  if (v1%to_string() /= '1.0.0-hff.87+fejf.08') call fail('Build identifier with leading zeroes changed.')
 
   call v1%parse('1-..', e)
   if (.not. allocated(e)) call fail('No consecutive dots.')
@@ -805,7 +808,7 @@ program test
   if (is_version('1.0.0-(')) call fail("'1.0.0-(' isn't a version.")
   if (is_version('1.0.0-')) call fail("'1.0.0-' isn't a version.")
   if (is_version('1.0.0-+')) call fail("'1.0.0-+' isn't a version.")
-  if (is_version('1.0.0-0')) call fail("'1.0.0-' isn't a version.")
+  if (.not. is_version('1.0.0-0')) call fail("'1.0.0-0' is a version.")
   if (is_version('1.0.0-ab..cd')) call fail("'1.0.0-ab..cd' isn't a version.")
   if (is_version('...')) call fail("'...' isn't a version.")
   if (is_version('-')) call fail("'-' isn't a version.")
@@ -1697,6 +1700,23 @@ program test
 
   call v1%parse('0.0.0-alpha+build', e, strict_mode=.true.)
   if (allocated(e)) call fail(e%msg)
+
+  call v1%parse('01.2.3', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in major version.')
+
+  call v1%parse('1.02.3', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in minor version.')
+
+  call v1%parse('1.2.03', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Strict mode: Leading zero in patch version.')
+
+  if (is_version('01.2.3', strict_mode=.true.)) call fail('Strict mode: Leading zero in major version accepted.')
+  if (is_version('1.02.3', strict_mode=.true.)) call fail('Strict mode: Leading zero in minor version accepted.')
+  if (is_version('1.2.03', strict_mode=.true.)) call fail('Strict mode: Leading zero in patch version accepted.')
+
+  call v1%parse('01.02.03', e, strict_mode=.false.)
+  if (allocated(e)) call fail('No strict mode: Leading zeroes should be accepted.')
+  if (v1%to_string() /= '1.2.3') call fail('No strict mode: Leading zeroes should be normalized.')
 
 !###################### is_greater overflow fallback ##########################!
 
