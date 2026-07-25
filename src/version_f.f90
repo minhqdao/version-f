@@ -743,26 +743,26 @@ contains
   !> True if both versions are exactly the same including the build metadata.
   !> This procedure has been added for convenience. It is not part of the
   !> Semantic Versioning 2.0.0 specification.
-  elemental logical function is_exactly(self, other)
-    class(version_t), intent(in) :: self
+  elemental logical function is_exactly(this, other)
+    class(version_t), intent(in) :: this
     type(version_t), intent(in) :: other
 
     integer :: i
 
-    is_exactly = self == other; 
+    is_exactly = this == other
     if (.not. is_exactly) return
 
-    if (allocated(self%build) .and. allocated(other%build)) then
-      if (size(self%build) /= size(other%build)) then
+    if (allocated(this%build) .and. allocated(other%build)) then
+      if (size(this%build) /= size(other%build)) then
         is_exactly = .false.; return
       end if
 
-      do i = 1, size(self%build)
-        if (self%build(i)%str /= other%build(i)%str) then
+      do i = 1, size(this%build)
+        if (this%build(i)%str /= other%build(i)%str) then
           is_exactly = .false.; return
         end if
       end do
-    else if (allocated(self%build) .or. allocated(other%build)) then
+    else if (allocated(this%build) .or. allocated(other%build)) then
       is_exactly = .false.; return
     end if
   end
