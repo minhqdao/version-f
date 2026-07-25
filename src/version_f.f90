@@ -570,21 +570,30 @@ contains
     write (str, '(I0)') num
   end
 
-  !> Validate prerelease or build identifier string without allocating.
+  !> Validate prerelease or build identifier string without allocating. Uses an
+  !> ASCII lookup table for O(1) character validation instead of O(m) scans.
   pure subroutine validate_identifiers(str, error)
     character(*), intent(in) :: str
     type(error_t), allocatable, intent(out) :: error
 
-    character(*), parameter :: valid_chars = &
-    & '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.'
-    integer :: i, start, length
+    integer :: i, c, start, length
+    logical :: valid(0:127)
 
     if (len_trim(str) == 0) then
       error = error_t('Identifier must not be empty.'); return
     end if
 
+    ! Build lookup table for valid identifier characters.
+    valid = .false.
+    valid(ichar('0'):ichar('9')) = .true.
+    valid(ichar('a'):ichar('z')) = .true.
+    valid(ichar('A'):ichar('Z')) = .true.
+    valid(ichar('-')) = .true.
+    valid(ichar('.')) = .true.
+
     do i = 1, len(str)
-      if (index(valid_chars, str(i:i)) == 0) then
+      c = ichar(str(i:i))
+      if (c < 0 .or. c > 127 .or. .not. valid(c)) then
         error = error_t("Invalid character in '"//str//"'."); return
       end if
     end do
