@@ -11,9 +11,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
-          - { compiler: gfortran, fpm_flags: "--flag '-Wall -Wextra'" }
-          - { compiler: ifx, fpm_flags: "--flag '-warn all'" }
-          - { compiler: ifort, fpm_flags: "--flag '-warn all'" }
+          - compiler: gfortran
+            fpm_flags: "--flag '-Wall -Wextra'"
+          - compiler: ifx
+            fpm_flags: '--flag "-warn all"'
+          - compiler: ifort
+            fpm_flags: '--flag "-warn all"'
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
@@ -22,9 +25,12 @@ jobs:
         include:
           - os: ubuntu-latest
             toolchain:
-              { compiler: nvfortran, fpm_flags: "--flag '-Minform=inform'" }
+              compiler: nvfortran
+              fpm_flags: "--flag '-Minform=inform'"
           - os: windows-latest
-            toolchain: { msystem: ucrt64, fpm_flags: "" }
+            toolchain:
+              msystem: ucrt64
+              fpm_flags: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -43,11 +49,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         toolchain:
-          - { compiler: gfortran, make_flags: "FFLAGS='-O2 -Wall -Wextra'" }
-          - { compiler: ifx, make_flags: "FFLAGS='-O2 -warn all'" }
-          - { compiler: ifort, make_flags: "FFLAGS='-O2 -warn all'" }
-          - { compiler: lfortran, make_flags: "" }
-          - { compiler: flang, make_flags: "" }
+          - compiler: gfortran
+            make_flags: "FFLAGS='-O2 -Wall -Wextra'"
+          - compiler: ifx
+            make_flags: 'FFLAGS="-O2 -warn all"'
+          - compiler: ifort
+            make_flags: 'FFLAGS="-O2 -warn all"'
+          - compiler: lfortran
+            make_flags: ""
+          - compiler: flang
+            make_flags: ""
         exclude:
           - os: macos-latest
             toolchain: { compiler: ifx }
@@ -56,24 +67,28 @@ jobs:
         include:
           - os: ubuntu-latest
             toolchain:
-              {
-                compiler: nvfortran,
-                make_flags: "FFLAGS='-O2 -Minform=inform'",
-              }
+              compiler: nvfortran
+              make_flags: 'FFLAGS="-O2 -Minform=inform"'
           - os: ubuntu-latest
-            toolchain: { compiler: aocc, make_flags: "" }
+            toolchain:
+              compiler: aocc
+              make_flags: ""
           - os: ubuntu-24.04-arm
             toolchain:
-              {
-                compiler: nvfortran,
-                make_flags: "FFLAGS='-O2 -Minform=inform'",
-              }
+              compiler: nvfortran
+              make_flags: 'FFLAGS="-O2 -Minform=inform"'
           - os: macos-26-intel
-            toolchain: { compiler: ifort, make_flags: "FFLAGS='-O2 -warn all'" }
+            toolchain:
+              compiler: ifort
+              make_flags: 'FFLAGS="-O2 -warn all"'
           - os: windows-latest
-            toolchain: { msystem: ucrt64, make_flags: "" }
+            toolchain:
+              msystem: ucrt64
+              make_flags: ""
           - os: windows-11-arm
-            toolchain: { compiler: flang, make_flags: "" }
+            toolchain:
+              compiler: flang
+              make_flags: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
