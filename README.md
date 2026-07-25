@@ -411,7 +411,7 @@ manual:
    release_tag=NEW_TAG
    git switch main
    git pull --ff-only
-   git tag -a "$release_tag" -m "version-f $release_tag"
+   git tag -a "$release_tag" -m "$release_tag"
    git push origin "$release_tag"
    ```
 
