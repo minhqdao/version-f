@@ -398,7 +398,10 @@ manual:
 2. Choose the next version according to Semantic Versioning.
 3. Update `version` in `fpm.toml` and both dependency tags in this README. CMake
    reads its version from `fpm.toml`, so it requires no separate update.
-4. Document any breaking changes.
+4. Move the entries in [CHANGELOG.md](CHANGELOG.md) from `Unreleased` into a
+   section for the new version and date. Keep an empty `Unreleased` section at
+   the top, update the comparison links at the bottom and call out breaking
+   changes.
 5. Commit the preparation, open a pull request and merge it into `main`.
 6. Wait for CI on the resulting `main` commit to pass. The release workflow
    will reject a commit without a successful `main` CI run.
@@ -423,7 +426,8 @@ Never move, delete or reuse a tag after its release has been published.
 
 Feel free to [create an issue](https://github.com/minhqdao/version-f/issues) in case you found a bug, have any questions or
 want to propose further improvements. Please stick to the existing coding style
-when you open a pull request.
+when you open a pull request. Add user-visible changes to the `Unreleased`
+section of [CHANGELOG.md](CHANGELOG.md).
 
 ## API stability
 
