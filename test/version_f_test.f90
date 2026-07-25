@@ -9,9 +9,19 @@ program test
   type(comparator_set_t) :: comp_set
   type(version_range_t) :: range
   type(error_t), allocatable :: e
+  type(string_t), allocatable :: identifiers(:)
   character(32) :: huge_str
 
 !################################### Create ###################################!
+
+  if (v1%to_string() /= '0.0.0') call fail('Default version should be initialized to 0.0.0')
+  if (v1%major() /= 0) call fail('Default major version should be zero')
+  if (v1%minor() /= 0) call fail('Default minor version should be zero')
+  if (v1%patch() /= 0) call fail('Default patch version should be zero')
+  identifiers = v1%prerelease()
+  if (size(identifiers) /= 0) call fail('Default version should not have prerelease identifiers')
+  identifiers = v1%build()
+  if (size(identifiers) /= 0) call fail('Default version should not have build identifiers')
 
   v1 = version_t(0, 0, 0)
   if (v1%to_string() /= '0.0.0') then
@@ -19,6 +29,9 @@ program test
   end if
 
   v1 = version_t(1, 2, 3)
+  if (v1%major() /= 1) call fail('Major accessor returned the wrong value')
+  if (v1%minor() /= 2) call fail('Minor accessor returned the wrong value')
+  if (v1%patch() /= 3) call fail('Patch accessor returned the wrong value')
   if (v1%to_string() /= '1.2.3') then
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
@@ -70,6 +83,14 @@ program test
   if (.not. allocated(e)) call fail('Invalid character.')
 
   v1 = version_t(1, 5, 3, 'abc', '789')
+  identifiers = v1%prerelease()
+  if (.not. allocated(identifiers)) call fail('Prerelease accessor returned no identifiers')
+  if (size(identifiers) /= 1 .or. identifiers(1)%str /= 'abc') call fail('Prerelease accessor returned wrong data')
+  identifiers = v1%build()
+  if (.not. allocated(identifiers)) call fail('Build accessor returned no identifiers')
+  if (size(identifiers) /= 1 .or. identifiers(1)%str /= '789') call fail('Build accessor returned wrong data')
+  identifiers(1)%str = 'changed'
+  if (v1%to_string() /= '1.5.3-abc+789') call fail('Changing accessor result mutated the version')
   if (v1%to_string() /= '1.5.3-abc+789') then
     call fail("Parsing failed for '"//v1%to_string()//"'")
   end if
@@ -440,13 +461,6 @@ program test
 
   call v1%parse('2147483648.0.0', e)
   if (.not. allocated(e)) call fail('Overflow at huge(0)+1 not caught.')
-
-  v1%major = -1
-  if (v1%to_string() /= '-1.0.0') call fail("Negative major failed for '"//v1%to_string()//"'")
-  v1%minor = -2
-  if (v1%to_string() /= '-1.-2.0') call fail("Negative minor failed for '"//v1%to_string()//"'")
-  v1%patch = -3
-  if (v1%to_string() /= '-1.-2.-3') call fail("Negative patch failed for '"//v1%to_string()//"'")
 
   v1 = version_t(1, 2, 3)
   v2 = version_t(1, 2, 3)

@@ -23,21 +23,23 @@ module version_f
 
   !> Contains all version information.
   type :: version_t
+    private
     !> The major version number. Incremented when breaking changes are made.
-    integer :: major
+    integer :: major_ = 0
     !> The minor version number. It is incremented when new functionality is
     !> added in a backwards-compatible manner.
-    integer :: minor
+    integer :: minor_ = 0
     !> The patch version number. Incremented for backwards-compatible bug fixes.
-    integer :: patch
+    integer :: patch_ = 0
     !> Pre-release version identifiers that are used for comparisons.
-    type(string_t), allocatable :: prerelease(:)
+    type(string_t), allocatable :: prerelease_(:)
     !> Build metadata that does not contribute to sorting.
-    type(string_t), allocatable :: build(:)
+    type(string_t), allocatable :: build_(:)
 
   contains
 
-    procedure :: to_string, increment_major, increment_minor, increment_patch, &
+    procedure :: to_string, major, minor, patch, prerelease, build, &
+    & increment_major, increment_minor, increment_patch, &
     & increment_prerelease, increment_build, try_increment_major, &
     & try_increment_minor, try_increment_patch, try_increment_prerelease, &
     & try_increment_build, is_exactly, satisfies, try_satisfy, &
@@ -194,39 +196,39 @@ contains
     if (major < 0) then
       error = error_t('Version numbers must not be negative.'); return
     end if
-    this%major = major
+    this%major_ = major
 
     if (present(minor)) then
       if (minor < 0) then
         error = error_t('Version numbers must not be negative.'); return
       end if
-      this%minor = minor
+      this%minor_ = minor
     else
       if (is_strict_mode) then
         error = error_t('Strict mode: Minor version must be provided.'); return
       end if
-      this%minor = 0
+      this%minor_ = 0
     end if
 
     if (present(patch)) then
       if (patch < 0) then
         error = error_t('Version numbers must not be negative.'); return
       end if
-      this%patch = patch
+      this%patch_ = patch
     else
       if (is_strict_mode) then
         error = error_t('Strict mode: Patch version must be provided.'); return
       end if
-      this%patch = 0
+      this%patch_ = 0
     end if
 
     if (present(prerelease)) then
-      call build_identifiers(this%prerelease, prerelease, .true., error)
+      call build_identifiers(this%prerelease_, prerelease, .true., error)
       if (allocated(error)) return
     end if
 
     if (present(build)) then
-      call build_identifiers(this%build, build, .false., error)
+      call build_identifiers(this%build_, build, .false., error)
       if (allocated(error)) return
     end if
   end
@@ -240,25 +242,25 @@ contains
     character(:), allocatable :: s_major, s_minor, s_patch
     integer :: n, pos, i
 
-    s_major = int2s(this%major)
-    s_minor = int2s(this%minor)
-    s_patch = int2s(this%patch)
+    s_major = int2s(this%major_)
+    s_minor = int2s(this%minor_)
+    s_patch = int2s(this%patch_)
 
     n = len_trim(s_major) + 1 + len_trim(s_minor) + 1 + len_trim(s_patch)
 
-    if (allocated(this%prerelease)) then
+    if (allocated(this%prerelease_)) then
       n = n + 1
-      do i = 1, size(this%prerelease)
-        n = n + len(this%prerelease(i)%str)
-        if (i < size(this%prerelease)) n = n + 1
+      do i = 1, size(this%prerelease_)
+        n = n + len(this%prerelease_(i)%str)
+        if (i < size(this%prerelease_)) n = n + 1
       end do
     end if
 
-    if (allocated(this%build)) then
+    if (allocated(this%build_)) then
       n = n + 1
-      do i = 1, size(this%build)
-        n = n + len(this%build(i)%str)
-        if (i < size(this%build)) n = n + 1
+      do i = 1, size(this%build_)
+        n = n + len(this%build_(i)%str)
+        if (i < size(this%build_)) n = n + 1
       end do
     end if
 
@@ -276,30 +278,75 @@ contains
     str(pos:pos + len_trim(s_patch) - 1) = trim(s_patch)
     pos = pos + len_trim(s_patch)
 
-    if (allocated(this%prerelease)) then
+    if (allocated(this%prerelease_)) then
       str(pos:pos) = '-'
       pos = pos + 1
-      do i = 1, size(this%prerelease)
-        str(pos:pos + len(this%prerelease(i)%str) - 1) = this%prerelease(i)%str
-        pos = pos + len(this%prerelease(i)%str)
-        if (i < size(this%prerelease)) then
+      do i = 1, size(this%prerelease_)
+        str(pos:pos + len(this%prerelease_(i)%str) - 1) = this%prerelease_(i)%str
+        pos = pos + len(this%prerelease_(i)%str)
+        if (i < size(this%prerelease_)) then
           str(pos:pos) = '.'
           pos = pos + 1
         end if
       end do
     end if
 
-    if (allocated(this%build)) then
+    if (allocated(this%build_)) then
       str(pos:pos) = '+'
       pos = pos + 1
-      do i = 1, size(this%build)
-        str(pos:pos + len(this%build(i)%str) - 1) = this%build(i)%str
-        pos = pos + len(this%build(i)%str)
-        if (i < size(this%build)) then
+      do i = 1, size(this%build_)
+        str(pos:pos + len(this%build_(i)%str) - 1) = this%build_(i)%str
+        pos = pos + len(this%build_(i)%str)
+        if (i < size(this%build_)) then
           str(pos:pos) = '.'
           pos = pos + 1
         end if
       end do
+    end if
+  end
+
+  !> Return the major version number.
+  elemental integer function major(this)
+    class(version_t), intent(in) :: this
+
+    major = this%major_
+  end
+
+  !> Return the minor version number.
+  elemental integer function minor(this)
+    class(version_t), intent(in) :: this
+
+    minor = this%minor_
+  end
+
+  !> Return the patch version number.
+  elemental integer function patch(this)
+    class(version_t), intent(in) :: this
+
+    patch = this%patch_
+  end
+
+  !> Return a copy of the prerelease identifiers.
+  pure function prerelease(this) result(identifiers)
+    class(version_t), intent(in) :: this
+    type(string_t), allocatable :: identifiers(:)
+
+    if (allocated(this%prerelease_)) then
+      identifiers = this%prerelease_
+    else
+      allocate (identifiers(0))
+    end if
+  end
+
+  !> Return a copy of the build identifiers.
+  pure function build(this) result(identifiers)
+    class(version_t), intent(in) :: this
+    type(string_t), allocatable :: identifiers(:)
+
+    if (allocated(this%build_)) then
+      identifiers = this%build_
+    else
+      allocate (identifiers(0))
     end if
   end
 
@@ -321,14 +368,14 @@ contains
     class(version_t), intent(inout) :: this
     type(error_t), allocatable, intent(out) :: error
 
-    if (this%major == huge(this%major)) then
+    if (this%major_ == huge(this%major_)) then
       error = error_t('Major version cannot be incremented without overflowing.'); return
     end if
-    this%major = this%major + 1
-    this%minor = 0
-    this%patch = 0
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
+    this%major_ = this%major_ + 1
+    this%minor_ = 0
+    this%patch_ = 0
+    if (allocated(this%prerelease_)) deallocate (this%prerelease_)
+    if (allocated(this%build_)) deallocate (this%build_)
   end
 
   !> Increments the minor version number and resets patch, prerelease and build.
@@ -348,13 +395,13 @@ contains
     class(version_t), intent(inout) :: this
     type(error_t), allocatable, intent(out) :: error
 
-    if (this%minor == huge(this%minor)) then
+    if (this%minor_ == huge(this%minor_)) then
       error = error_t('Minor version cannot be incremented without overflowing.'); return
     end if
-    this%minor = this%minor + 1
-    this%patch = 0
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
+    this%minor_ = this%minor_ + 1
+    this%patch_ = 0
+    if (allocated(this%prerelease_)) deallocate (this%prerelease_)
+    if (allocated(this%build_)) deallocate (this%build_)
   end
 
   !> Increments the patch version number and resets prerelease and build. Reports
@@ -373,12 +420,12 @@ contains
     class(version_t), intent(inout) :: this
     type(error_t), allocatable, intent(out) :: error
 
-    if (this%patch == huge(this%patch)) then
+    if (this%patch_ == huge(this%patch_)) then
       error = error_t('Patch version cannot be incremented without overflowing.'); return
     end if
-    this%patch = this%patch + 1
-    if (allocated(this%prerelease)) deallocate (this%prerelease)
-    if (allocated(this%build)) deallocate (this%build)
+    this%patch_ = this%patch_ + 1
+    if (allocated(this%prerelease_)) deallocate (this%prerelease_)
+    if (allocated(this%build_)) deallocate (this%build_)
   end
 
   !> Increment prerelease and reset build data. Reports an error and leaves the
@@ -399,11 +446,11 @@ contains
 
     logical :: incremented
 
-    call increment_identifier(this%prerelease, incremented)
+    call increment_identifier(this%prerelease_, incremented)
     if (.not. incremented) then
       error = error_t('Prerelease identifier cannot be incremented without overflowing.'); return
     end if
-    if (allocated(this%build)) deallocate (this%build)
+    if (allocated(this%build_)) deallocate (this%build_)
   end
 
   !> Increment build metadata. Reports an error and leaves the version unchanged
@@ -424,7 +471,7 @@ contains
 
     logical :: incremented
 
-    call increment_identifier(this%build, incremented)
+    call increment_identifier(this%build_, incremented)
     if (.not. incremented) then
       error = error_t('Build identifier cannot be incremented without overflowing.')
     end if
@@ -509,17 +556,17 @@ contains
     else if (i /= 0 .and. j == 0) then
       call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease, str(i + 1:len_trim(str)), .true., error); return
+      call build_identifiers(this%prerelease_, str(i + 1:len_trim(str)), .true., error); return
     else if ((i == 0 .and. j /= 0) .or. ((i /= 0 .and. j /= 0) .and. (i > j))) then
       call build_mmp(this, str(1:j - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), .false., error); return
+      call build_identifiers(this%build_, str(j + 1:len_trim(str)), .false., error); return
     else if (i /= 0 .and. j /= 0) then
       call build_mmp(this, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease, str(i + 1:j - 1), .true., error)
+      call build_identifiers(this%prerelease_, str(i + 1:j - 1), .true., error)
       if (allocated(error)) return
-      call build_identifiers(this%build, str(j + 1:len_trim(str)), .false., error); return
+      call build_identifiers(this%build_, str(j + 1:len_trim(str)), .false., error); return
     end if
   end
 
@@ -541,9 +588,9 @@ contains
       is_strict_mode = .false.
     end if
 
-    this%major = 0
-    this%minor = 0
-    this%patch = 0
+    this%major_ = 0
+    this%minor_ = 0
+    this%patch_ = 0
 
     i = index(str, '.')
     l = len_trim(str)
@@ -556,7 +603,7 @@ contains
       if (is_strict_mode) then
         error = error_t('Strict mode: No minor and patch versions provided.'); return
       end if
-      call s2int(str, this%major, error)
+      call s2int(str, this%major_, error)
       if (allocated(error)) return
     else
       if (is_strict_mode .and. i == 1) then
@@ -566,14 +613,14 @@ contains
         call validate_core_number(str(1:i - 1), error)
         if (allocated(error)) return
       end if
-      call s2int(str(1:i - 1), this%major, error)
+      call s2int(str(1:i - 1), this%major_, error)
       if (allocated(error)) return
       j = index(str(i + 1:l), '.')
       if (j == 0) then
         if (is_strict_mode) then
           error = error_t('Strict mode: No patch version provided.'); return
         end if
-        call s2int(str(i + 1:l), this%minor, error)
+        call s2int(str(i + 1:l), this%minor_, error)
         if (allocated(error)) return
       else
         if (is_strict_mode .and. j == 1) then
@@ -583,7 +630,7 @@ contains
           call validate_core_number(str(i + 1:i + j - 1), error)
           if (allocated(error)) return
         end if
-        call s2int(str(i + 1:i + j - 1), this%minor, error)
+        call s2int(str(i + 1:i + j - 1), this%minor_, error)
         if (allocated(error)) return
         if (is_strict_mode .and. len(str) == i + j) then
           error = error_t('Strict mode: Patch version must be a number.'); return
@@ -592,7 +639,7 @@ contains
           call validate_core_number(str(i + j + 1:l), error)
           if (allocated(error)) return
         end if
-        call s2int(str(i + j + 1:l), this%patch, error)
+        call s2int(str(i + j + 1:l), this%patch_, error)
         if (allocated(error)) return
       end if
     end if
@@ -808,22 +855,22 @@ contains
 
     integer :: i
 
-    equals = lhs%major == rhs%major &
-    &  .and. lhs%minor == rhs%minor &
-    &  .and. lhs%patch == rhs%patch
+    equals = lhs%major_ == rhs%major_ &
+    &  .and. lhs%minor_ == rhs%minor_ &
+    &  .and. lhs%patch_ == rhs%patch_
 
     if (.not. equals) return
 
-    if (allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
-      if (size(lhs%prerelease) /= size(rhs%prerelease)) then
+    if (allocated(lhs%prerelease_) .and. allocated(rhs%prerelease_)) then
+      if (size(lhs%prerelease_) /= size(rhs%prerelease_)) then
         equals = .false.; return
       end if
-      do i = 1, size(lhs%prerelease)
-        if (lhs%prerelease(i)%str /= rhs%prerelease(i)%str) then
+      do i = 1, size(lhs%prerelease_)
+        if (lhs%prerelease_(i)%str /= rhs%prerelease_(i)%str) then
           equals = .false.; return
         end if
       end do
-    else if (allocated(lhs%prerelease) .or. allocated(rhs%prerelease)) then
+    else if (allocated(lhs%prerelease_) .or. allocated(rhs%prerelease_)) then
       equals = .false.
     end if
   end
@@ -841,22 +888,22 @@ contains
     class(version_t), intent(in) :: lhs
     class(version_t), intent(in) :: rhs
 
-    greater_than = lhs%major > rhs%major &
-    & .or. (lhs%major == rhs%major &
-    & .and. lhs%minor > rhs%minor) &
-    & .or. (lhs%major == rhs%major &
-    & .and. lhs%minor == rhs%minor &
-    & .and. lhs%patch > rhs%patch)
+    greater_than = lhs%major_ > rhs%major_ &
+    & .or. (lhs%major_ == rhs%major_ &
+    & .and. lhs%minor_ > rhs%minor_) &
+    & .or. (lhs%major_ == rhs%major_ &
+    & .and. lhs%minor_ == rhs%minor_ &
+    & .and. lhs%patch_ > rhs%patch_)
 
     if (greater_than) return
 
-    if (lhs%major == rhs%major .and. lhs%minor == rhs%minor .and. lhs%patch == rhs%patch) then
-      if (allocated(lhs%prerelease) .and. .not. allocated(rhs%prerelease)) then
+    if (lhs%major_ == rhs%major_ .and. lhs%minor_ == rhs%minor_ .and. lhs%patch_ == rhs%patch_) then
+      if (allocated(lhs%prerelease_) .and. .not. allocated(rhs%prerelease_)) then
         greater_than = .false.
-      else if (.not. allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
+      else if (.not. allocated(lhs%prerelease_) .and. allocated(rhs%prerelease_)) then
         greater_than = .true.
-      else if (allocated(lhs%prerelease) .and. allocated(rhs%prerelease)) then
-        greater_than = is_greater(lhs%prerelease, rhs%prerelease)
+      else if (allocated(lhs%prerelease_) .and. allocated(rhs%prerelease_)) then
+        greater_than = is_greater(lhs%prerelease_, rhs%prerelease_)
       end if
     end if
   end
@@ -937,17 +984,17 @@ contains
     is_exactly = this == other
     if (.not. is_exactly) return
 
-    if (allocated(this%build) .and. allocated(other%build)) then
-      if (size(this%build) /= size(other%build)) then
+    if (allocated(this%build_) .and. allocated(other%build_)) then
+      if (size(this%build_) /= size(other%build_)) then
         is_exactly = .false.; return
       end if
 
-      do i = 1, size(this%build)
-        if (this%build(i)%str /= other%build(i)%str) then
+      do i = 1, size(this%build_)
+        if (this%build_(i)%str /= other%build_(i)%str) then
           is_exactly = .false.; return
         end if
       end do
-    else if (allocated(this%build) .or. allocated(other%build)) then
+    else if (allocated(this%build_) .or. allocated(other%build_)) then
       is_exactly = .false.; return
     end if
   end
@@ -1434,6 +1481,6 @@ contains
     !> Instance of `version_t` to be evaluated.
     class(version_t), intent(in) :: version
 
-    is_stable = version%major > 0 .and. .not. allocated(version%prerelease)
+    is_stable = version%major_ > 0 .and. .not. allocated(version%prerelease_)
   end
 end
