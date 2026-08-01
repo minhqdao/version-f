@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: minhqdao/setup-fortran@v1
+      - uses: minhqdao/setup-fortran@v1.7.0
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
@@ -94,7 +94,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: minhqdao/setup-fortran@v1
+      - uses: minhqdao/setup-fortran@v1.7.0
         id: setup
         with:
           compiler: ${{ matrix.toolchain.compiler }}
@@ -119,7 +119,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: minhqdao/setup-fortran@v1
+      - uses: minhqdao/setup-fortran@v1.7.0
         with:
           compiler: gfortran
       - name: Configure
@@ -176,7 +176,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: minhqdao/setup-fortran@v1
+      - uses: minhqdao/setup-fortran@v1.7.0
         with:
           compiler: gfortran
           version: "15"
