@@ -138,7 +138,9 @@ jobs:
             toolchain: { compiler: gfortran }
           - os: windows-latest
             linkage: static
-            toolchain: { compiler: ifx }
+            toolchain:
+              compiler: ifx
+              cmake_flags: -G Ninja
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -146,17 +148,17 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
       - name: Configure
-        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
+        run: cmake -S . -B build/cmake ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
       - run: cmake --build build/cmake --config Release --parallel
       - run: ctest --test-dir build/cmake -C Release --output-on-failure
       - name: Install
         run: cmake --install build/cmake --config Release --prefix "${{ runner.temp }}/version-f-install"
       - name: Configure installed-package consumer
-        run: cmake -S cmake/test/find-package -B build/find-package -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ runner.temp }}/version-f-install"
+        run: cmake -S cmake/test/find-package -B build/find-package ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ runner.temp }}/version-f-install"
       - run: cmake --build build/find-package --config Release --parallel
       - run: ctest --test-dir build/find-package -C Release --output-on-failure
       - name: Configure FetchContent consumer
-        run: cmake -S cmake/test/fetch-content -B build/fetch-content -DCMAKE_BUILD_TYPE=Release -DVERSION_F_SOURCE_DIR="${{ github.workspace }}"
+        run: cmake -S cmake/test/fetch-content -B build/fetch-content ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DVERSION_F_SOURCE_DIR="${{ github.workspace }}"
       - run: cmake --build build/fetch-content --config Release --parallel
       - run: ctest --test-dir build/fetch-content -C Release --output-on-failure
 
