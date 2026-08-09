@@ -1353,10 +1353,10 @@ contains
       if (start == i) then
         error = error_t('Version must not be empty.'); return
       end if
-      call comp%version%parse(str(start:i - 1), error)
-      if (allocated(error)) return
       idx = idx + 1
-      this%comps(idx) = comp
+      this%comps(idx)%op = comp%op
+      call this%comps(idx)%version%parse(str(start:i - 1), error)
+      if (allocated(error)) return
     end do
   end
 

@@ -54,9 +54,9 @@ jobs:
           - compiler: gfortran
             make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
           - compiler: ifx
-            make_flags: 'FFLAGS="-O2 -warn all"'
+            make_flags: 'FFLAGS="-O2 -warn:all"'
           - compiler: ifort
-            make_flags: 'FFLAGS="-O2 -warn all"'
+            make_flags: 'FFLAGS="-O2 -warn:all"'
           - compiler: lfortran
             make_flags: ""
           - compiler: flang
@@ -82,7 +82,7 @@ jobs:
           - os: macos-26-intel
             toolchain:
               compiler: ifort
-              make_flags: 'FFLAGS="-O2 -warn all"'
+              make_flags: 'FFLAGS="-O2 -warn:all"'
           - os: windows-latest
             toolchain:
               msystem: ucrt64
@@ -100,7 +100,16 @@ jobs:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
       - run: echo "${{ steps.setup.outputs.version }}"
-      - run: make test ${{ matrix.toolchain.make_flags }}
+      - run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            vswhere="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+            link_exe=$("$vswhere" -latest -products '*' \
+              -find 'VC\Tools\MSVC\**\bin\Host*\*\link.exe' | head -n 1 | tr -d '\r')
+            if [[ -n "$link_exe" ]]; then
+              export PATH="$(dirname "$(cygpath -u "$link_exe")"):$PATH"
+            fi
+          fi
+          make test ${{ matrix.toolchain.make_flags }}
         shell: bash
 
   cmake-test:

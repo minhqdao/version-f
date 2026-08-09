@@ -27,10 +27,7 @@ endif
 IS_GFORT  := $(findstring gfortran,$(FC))
 IS_LFORTR := $(findstring lfortran,$(FC))
 IS_FLANG  := $(findstring flang,$(FC))
-IS_AOCC   := $(findstring aocc,$(FORTRAN_COMPILER))
-ifneq (,$(IS_FLANG))
-	IS_AOCC += $(findstring AOCC,$(shell $(FC) --version 2>&1))
-endif
+IS_AOCC   := $(findstring aocc,$(FORTRAN_COMPILER))$(if $(IS_FLANG),$(findstring AOCC,$(shell $(FC) --version 2>&1)))
 
 MSVC_ABI :=
 ifeq ($(PLATFORM),Windows)
@@ -75,7 +72,11 @@ STATIC := lib$(NAME).a
 ARCHIVE = $(AR) $(ARFLAGS) $@ $^
 ifneq (,$(MSVC_ABI))
 	STATIC := lib$(NAME).lib
-	ARCHIVE = lib.exe /nologo /out:$@ $^
+	ifneq (,$(IS_FLANG))
+		ARCHIVE = llvm-ar rcs $@ $^
+	else
+		ARCHIVE = lib.exe /nologo /out:$@ $^
+	endif
 endif
 
 SRCDIR := src
