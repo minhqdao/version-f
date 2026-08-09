@@ -67,6 +67,15 @@ jobs:
           - os: macos-latest
             toolchain: { compiler: ifort }
         include:
+          - os: ubuntu-24.04-arm
+            toolchain:
+              compiler: gfortran
+              make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
+          - os: ubuntu-22.04
+            toolchain:
+              compiler: gfortran
+              version: "11"
+              make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
           - os: ubuntu-latest
             toolchain:
               compiler: nvfortran
@@ -110,25 +119,32 @@ jobs:
         shell: bash
 
   cmake-test:
-    name: CMake / ${{ matrix.os }} / ${{ matrix.linkage }}
+    name: CMake / ${{ matrix.os }} / ${{ matrix.toolchain.compiler }} / ${{ matrix.linkage }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             linkage: static
+            toolchain: { compiler: gfortran }
           - os: ubuntu-latest
             linkage: shared
+            toolchain: { compiler: gfortran }
           - os: macos-latest
             linkage: static
+            toolchain: { compiler: gfortran }
           - os: windows-latest
             linkage: static
+            toolchain: { compiler: gfortran }
+          - os: windows-latest
+            linkage: static
+            toolchain: { compiler: ifx }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
       - uses: minhqdao/setup-fortran@v1
         with:
-          compiler: gfortran
+          compiler: ${{ matrix.toolchain.compiler }}
       - name: Configure
         run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
       - run: cmake --build build/cmake --config Release --parallel
