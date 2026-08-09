@@ -539,7 +539,7 @@ contains
         tmp(1:n) = ids(1:n)
         tmp(n + 1)%str = '1'
       end if
-      ids = tmp
+      call move_alloc(tmp, ids)
     else
       allocate (ids(1))
       ids(1)%str = '1'

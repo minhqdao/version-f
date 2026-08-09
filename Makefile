@@ -28,6 +28,23 @@ IS_GFORT  := $(findstring gfortran,$(FC))
 IS_LFORTR := $(findstring lfortran,$(FC))
 IS_FLANG  := $(findstring flang,$(FC))
 
+SHARED_SUPPORTED := yes
+ifneq (,$(IS_LFORTR))
+	SHARED_SUPPORTED :=
+endif
+ifeq ($(PLATFORM),Windows)
+ifeq (,$(IS_GFORT))
+	SHARED_SUPPORTED :=
+endif
+endif
+
+PICFLAGS :=
+ifneq (,$(SHARED_SUPPORTED))
+ifneq ($(PLATFORM),Windows)
+	PICFLAGS := -fpic
+endif
+endif
+
 ifneq (,$(IS_GFORT)$(IS_LFORTR))
 	MODIN  = -I$(MODDIR)
 	MODOUT = -J$(MODDIR)
@@ -65,7 +82,7 @@ BUILD_TARGETS := static
 TEST_TARGETS := $(TESTEXESSTATIC)
 EXAMPLE_TARGETS := $(EXMPLEXESSTATIC)
 
-ifeq (,$(IS_LFORTR))
+ifneq (,$(SHARED_SUPPORTED))
 	BUILD_TARGETS += shared
 	TEST_TARGETS += $(TESTEXESSHARED)
 	EXAMPLE_TARGETS += $(EXMPLEXESSHARED)
@@ -78,14 +95,14 @@ examples: $(EXAMPLE_TARGETS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	@mkdir -p $(MODDIR) $(OBJDIR)
-	$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
+	$(FC) $(FFLAGS) $(PICFLAGS) $(MODOUT) -c $< -o $@
 
 $(STATIC): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $^
 
 $(SHARED): $(OBJS)
 	@mkdir -p $(MODDIR)
-	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $^ $(LDFLAGS)
+	$(FC) $(FFLAGS) -shared $(MODOUT) -o $@ $^ $(LDFLAGS)
 
 $(EXEDIR):
 	@mkdir -p $(EXEDIR)
