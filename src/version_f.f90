@@ -1416,7 +1416,7 @@ contains
     logical, intent(out) :: is_satisfied
 
     !> Error handling.
-    type(error_t), allocatable, intent(out) :: error
+    type(error_t), allocatable, intent(inout) :: error
 
     if (comparator%op == '>') then
       is_satisfied = this > comparator%version
