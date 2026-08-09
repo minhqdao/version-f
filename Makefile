@@ -27,6 +27,17 @@ endif
 IS_GFORT  := $(findstring gfortran,$(FC))
 IS_LFORTR := $(findstring lfortran,$(FC))
 IS_FLANG  := $(findstring flang,$(FC))
+IS_AOCC   := $(findstring aocc,$(FORTRAN_COMPILER))
+ifneq (,$(IS_FLANG))
+	IS_AOCC += $(findstring AOCC,$(shell $(FC) --version 2>&1))
+endif
+
+MSVC_ABI :=
+ifeq ($(PLATFORM),Windows)
+ifeq (,$(IS_GFORT)$(IS_LFORTR))
+	MSVC_ABI := yes
+endif
+endif
 
 SHARED_SUPPORTED := yes
 ifneq (,$(IS_LFORTR))
@@ -48,6 +59,9 @@ endif
 ifneq (,$(IS_GFORT)$(IS_LFORTR))
 	MODIN  = -I$(MODDIR)
 	MODOUT = -J$(MODDIR)
+else ifneq (,$(IS_AOCC))
+	MODIN  = -I$(MODDIR)
+	MODOUT = -module $(MODDIR)
 else ifneq (,$(IS_FLANG))
 	MODIN  = -I$(MODDIR)
 	MODOUT = -module-dir $(MODDIR)
@@ -58,6 +72,11 @@ endif
 
 NAME := version-f
 STATIC := lib$(NAME).a
+ARCHIVE = $(AR) $(ARFLAGS) $@ $^
+ifneq (,$(MSVC_ABI))
+	STATIC := lib$(NAME).lib
+	ARCHIVE = lib.exe /nologo /out:$@ $^
+endif
 
 SRCDIR := src
 TESTDIR := test
@@ -98,7 +117,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	$(FC) $(FFLAGS) $(PICFLAGS) $(MODOUT) -c $< -o $@
 
 $(STATIC): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $^
+	$(ARCHIVE)
 
 $(SHARED): $(OBJS)
 	@mkdir -p $(MODDIR)

@@ -101,6 +101,7 @@ jobs:
           version: ${{ matrix.toolchain.version }}
       - run: echo "${{ steps.setup.outputs.version }}"
       - run: make test ${{ matrix.toolchain.make_flags }}
+        shell: bash
 
   cmake-test:
     name: CMake / ${{ matrix.os }} / ${{ matrix.linkage }}
