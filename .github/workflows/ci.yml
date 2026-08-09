@@ -97,7 +97,8 @@ jobs:
           version: ${{ matrix.toolchain.version }}
       - run: echo "${{ steps.setup.outputs.version }}"
       - run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
+          if [[ "$RUNNER_OS" == "Windows" && \
+                "$FORTRAN_COMPILER" =~ ^(flang|ifort|ifx)$ ]]; then
             vswhere="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
             link_exe=$("$vswhere" -latest -products '*' \
               -find 'VC\Tools\MSVC\**\bin\Host*\*\link.exe' | head -n 1 | tr -d '\r')
