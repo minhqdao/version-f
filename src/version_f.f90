@@ -1380,6 +1380,7 @@ contains
 
     integer :: i
     logical :: comparator_satisfied
+    type(error_t), allocatable :: comparator_error
 
     if (size(comp_set%comps) == 0) then
       error = error_t('Comparator set cannot be empty.'); return
@@ -1387,8 +1388,10 @@ contains
 
     is_satisfied = .true.
     do i = 1, size(comp_set%comps)
-      call version%satisfies_comp(comp_set%comps(i), comparator_satisfied, error)
-      if (allocated(error)) return
+      call version%satisfies_comp(comp_set%comps(i), comparator_satisfied, comparator_error)
+      if (allocated(comparator_error)) then
+        call move_alloc(comparator_error, error); return
+      end if
       if (.not. comparator_satisfied) then
         is_satisfied = .false.; return
       end if
