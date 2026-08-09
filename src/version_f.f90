@@ -1136,7 +1136,11 @@ contains
     end if
 
     call version_range%try_satisfy(this, is_satisfied, satisfy_error)
-    if (allocated(satisfy_error)) call move_alloc(satisfy_error, error)
+    if (allocated(satisfy_error)) then
+      call move_alloc(satisfy_error, error)
+    else if (allocated(error)) then
+      deallocate (error)
+    end if
   end
 
   !> Convenience function to determine whether the version meets the comparison.

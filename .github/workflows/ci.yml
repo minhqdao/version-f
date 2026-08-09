@@ -74,8 +74,7 @@ jobs:
           - os: ubuntu-latest
             toolchain:
               compiler: aocc
-              # AOCC 5.2 classic Flang miscompiles allocatable error state at -O2.
-              make_flags: 'FFLAGS="-O0"'
+              make_flags: ""
           - os: ubuntu-24.04-arm
             toolchain:
               compiler: nvfortran
