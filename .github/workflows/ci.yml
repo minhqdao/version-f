@@ -71,10 +71,6 @@ jobs:
             toolchain:
               compiler: nvfortran
               make_flags: 'FFLAGS="-O2 -Minform=inform"'
-          - os: ubuntu-latest
-            toolchain:
-              compiler: aocc
-              make_flags: ""
           - os: ubuntu-24.04-arm
             toolchain:
               compiler: nvfortran
