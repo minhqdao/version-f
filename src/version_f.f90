@@ -2,6 +2,8 @@
 !> procedures that are necessary to create, parse, compare, convert and
 !> manipulate version numbers.
 module version_f
+  use, intrinsic :: iso_fortran_env, only: error_unit
+
   implicit none
   private
 
@@ -111,6 +113,16 @@ module version_f
 
 contains
 
+  !> Report an unrecoverable API error and terminate execution. A bare
+  !> `error stop` keeps this procedure conforming to Fortran 2008, where the
+  !> stop code must be a constant expression.
+  impure subroutine fatal_error(error)
+    type(error_t), intent(in) :: error
+
+    write (error_unit, '(A)') error%message()
+    error stop
+  end subroutine
+
   !> Wrapper function for `try_create`.
   !>
   !> Can be invoked by calling the default constructor.
@@ -128,7 +140,7 @@ contains
     type(error_t), allocatable :: error
 
     call try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Create a version from individual major, minor, patch, prerelease and build
@@ -373,13 +385,13 @@ contains
   !> as well as the prerelease and build data. Reports an error and leaves the
   !> version unchanged if the major number cannot be incremented without
   !> overflowing.
-  elemental subroutine increment_major(this)
+  impure elemental subroutine increment_major(this)
     class(version_t), intent(inout) :: this
 
     type(error_t), allocatable :: error
 
     call this%try_increment_major(error)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to increment the major version, reporting overflow through `error`.
@@ -400,13 +412,13 @@ contains
   !> Increments the minor version number and resets patch, prerelease and build.
   !> Reports an error and leaves the version unchanged if the minor number would
   !> overflow.
-  elemental subroutine increment_minor(this)
+  impure elemental subroutine increment_minor(this)
     class(version_t), intent(inout) :: this
 
     type(error_t), allocatable :: error
 
     call this%try_increment_minor(error)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to increment the minor version, reporting overflow through `error`.
@@ -425,13 +437,13 @@ contains
 
   !> Increments the patch version number and resets prerelease and build. Reports
   !> an error and leaves the version unchanged if the patch number would overflow.
-  elemental subroutine increment_patch(this)
+  impure elemental subroutine increment_patch(this)
     class(version_t), intent(inout) :: this
 
     type(error_t), allocatable :: error
 
     call this%try_increment_patch(error)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to increment the patch version, reporting overflow through `error`.
@@ -449,13 +461,13 @@ contains
 
   !> Increment prerelease and reset build data. Reports an error and leaves the
   !> version unchanged if the final numeric prerelease identifier would overflow.
-  elemental subroutine increment_prerelease(this)
+  impure elemental subroutine increment_prerelease(this)
     class(version_t), intent(inout) :: this
 
     type(error_t), allocatable :: error
 
     call this%try_increment_prerelease(error)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to increment prerelease data, reporting overflow through `error`.
@@ -474,13 +486,13 @@ contains
 
   !> Increment build metadata. Reports an error and leaves the version unchanged
   !> if the final numeric build identifier would overflow.
-  elemental subroutine increment_build(this)
+  impure elemental subroutine increment_build(this)
     class(version_t), intent(inout) :: this
 
     type(error_t), allocatable :: error
 
     call this%try_increment_build(error)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to increment build metadata, reporting overflow through `error`.
@@ -550,7 +562,7 @@ contains
     type(error_t), allocatable :: error
 
     call version%parse(str, error, strict_mode)
-    if (allocated(error)) error stop error%msg_
+    if (allocated(error)) call fatal_error(error)
   end
 
   !> Attempt to parse a string into a version including prerelease and build

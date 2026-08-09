@@ -172,6 +172,21 @@ jobs:
           pip install fortitude-lint
           fortitude check .
 
+  standard-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: minhqdao/setup-fortran@v1
+        with:
+          compiler: gfortran
+      - name: Check Fortran 2008 conformance
+        run: |
+          mkdir -p build/standard
+          gfortran -std=f2008 -pedantic-errors -fsyntax-only \
+            -J build/standard src/version_f.f90
+          gfortran -std=f2008 -pedantic-errors -fsyntax-only \
+            -I build/standard test/*.f90 example/*.f90 cmake/test/consumer.f90
+
   coverage:
     runs-on: ubuntu-latest
     steps:

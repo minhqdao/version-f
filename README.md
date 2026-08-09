@@ -10,6 +10,8 @@ This package implements the version syntax and precedence rules from
 [Semantic Versioning 2.0.0](https://semver.org). It aims to be a user-friendly
 tool for handling versions in your Fortran projects.
 
+version-f requires a Fortran 2008 compiler.
+
 It follows the `major`.`minor`.`patch` pattern and allows the inclusion of
 `prerelease` labels and `build` metadata. Versions can be created or parsed from
 strings, compared, incremented and printed as strings.
