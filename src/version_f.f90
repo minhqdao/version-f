@@ -1122,6 +1122,7 @@ contains
 
     character(:), allocatable :: str
     type(version_range_t) :: version_range
+    type(error_t), allocatable :: parse_error, satisfy_error
 
     str = trim(adjustl(string))
 
@@ -1129,10 +1130,13 @@ contains
       error = error_t('Do not compare empty expressions.'); return
     end if
 
-    call version_range%parse(str, error)
-    if (allocated(error)) return
+    call version_range%parse(str, parse_error)
+    if (allocated(parse_error)) then
+      call move_alloc(parse_error, error); return
+    end if
 
-    call version_range%try_satisfy(this, is_satisfied, error)
+    call version_range%try_satisfy(this, is_satisfied, satisfy_error)
+    if (allocated(satisfy_error)) call move_alloc(satisfy_error, error)
   end
 
   !> Convenience function to determine whether the version meets the comparison.
