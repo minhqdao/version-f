@@ -181,8 +181,9 @@ contains
   !> Use this procedure if you want to handle errors yourself.
   !>
   !> In strict mode, all major, minor and patch versions must be provided.
+  !> If creation fails, `this` is left unchanged.
   subroutine try_create(this, major, minor, patch, prerelease, build, error, strict_mode)
-    class(version_t), intent(out) :: this
+    class(version_t), intent(inout) :: this
     integer, intent(in) :: major
     integer, optional, intent(in) :: minor
     integer, optional, intent(in) :: patch
@@ -192,6 +193,7 @@ contains
     logical, optional, intent(in) :: strict_mode
 
     logical :: is_strict_mode
+    type(version_t) :: candidate
 
     if (present(strict_mode)) then
       is_strict_mode = strict_mode
@@ -202,41 +204,47 @@ contains
     if (major < 0) then
       error = error_t('Version numbers must not be negative.'); return
     end if
-    this%major_ = major
+    candidate%major_ = major
 
     if (present(minor)) then
       if (minor < 0) then
         error = error_t('Version numbers must not be negative.'); return
       end if
-      this%minor_ = minor
+      candidate%minor_ = minor
     else
       if (is_strict_mode) then
         error = error_t('Strict mode: Minor version must be provided.'); return
       end if
-      this%minor_ = 0
+      candidate%minor_ = 0
     end if
 
     if (present(patch)) then
       if (patch < 0) then
         error = error_t('Version numbers must not be negative.'); return
       end if
-      this%patch_ = patch
+      candidate%patch_ = patch
     else
       if (is_strict_mode) then
         error = error_t('Strict mode: Patch version must be provided.'); return
       end if
-      this%patch_ = 0
+      candidate%patch_ = 0
     end if
 
     if (present(prerelease)) then
-      call build_identifiers(this%prerelease_, prerelease, .true., error)
+      call build_identifiers(candidate%prerelease_, prerelease, .true., error)
       if (allocated(error)) return
     end if
 
     if (present(build)) then
-      call build_identifiers(this%build_, build, .false., error)
+      call build_identifiers(candidate%build_, build, .false., error)
       if (allocated(error)) return
     end if
+
+    this%major_ = candidate%major_
+    this%minor_ = candidate%minor_
+    this%patch_ = candidate%patch_
+    call move_alloc(candidate%prerelease_, this%prerelease_)
+    call move_alloc(candidate%build_, this%build_)
   end
 
   !> Returns a string representation of the version including prerelease and
@@ -567,15 +575,17 @@ contains
 
   !> Attempt to parse a string into a version including prerelease and build
   !> data. In strict mode, all major, minor and patch versions must be provided.
-  !> Implicit zeros and leading zeroes are forbidden in strict mode.
+  !> Implicit zeros and leading zeroes are forbidden in strict mode. If parsing
+  !> fails, `this` is left unchanged.
   subroutine try_parse(this, string, error, strict_mode)
-    class(version_t), intent(out) :: this
+    class(version_t), intent(inout) :: this
     character(*), intent(in) :: string
     type(error_t), allocatable, intent(out) :: error
     logical, optional, intent(in) :: strict_mode
 
     integer :: i, j
     character(:), allocatable :: str
+    type(version_t) :: candidate
 
     str = trim(adjustl(string))
 
@@ -583,21 +593,29 @@ contains
     j = index(str, '+')
 
     if (i == 0 .and. j == 0) then
-      call build_mmp(this, str, error, strict_mode); return
+      call build_mmp(candidate, str, error, strict_mode)
     else if (i /= 0 .and. j == 0) then
-      call build_mmp(this, str(1:i - 1), error, strict_mode)
+      call build_mmp(candidate, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease_, str(i + 1:len_trim(str)), .true., error); return
+      call build_identifiers(candidate%prerelease_, str(i + 1:len_trim(str)), .true., error)
     else if ((i == 0 .and. j /= 0) .or. ((i /= 0 .and. j /= 0) .and. (i > j))) then
-      call build_mmp(this, str(1:j - 1), error, strict_mode)
+      call build_mmp(candidate, str(1:j - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%build_, str(j + 1:len_trim(str)), .false., error); return
+      call build_identifiers(candidate%build_, str(j + 1:len_trim(str)), .false., error)
     else if (i /= 0 .and. j /= 0) then
-      call build_mmp(this, str(1:i - 1), error, strict_mode)
+      call build_mmp(candidate, str(1:i - 1), error, strict_mode)
       if (allocated(error)) return
-      call build_identifiers(this%prerelease_, str(i + 1:j - 1), .true., error)
+      call build_identifiers(candidate%prerelease_, str(i + 1:j - 1), .true., error)
       if (allocated(error)) return
-      call build_identifiers(this%build_, str(j + 1:len_trim(str)), .false., error); return
+      call build_identifiers(candidate%build_, str(j + 1:len_trim(str)), .false., error)
+    end if
+
+    if (.not. allocated(error)) then
+      this%major_ = candidate%major_
+      this%minor_ = candidate%minor_
+      this%patch_ = candidate%patch_
+      call move_alloc(candidate%prerelease_, this%prerelease_)
+      call move_alloc(candidate%build_, this%build_)
     end if
   end
 
@@ -1124,6 +1142,7 @@ contains
     type(version_range_t) :: version_range
     type(error_t), allocatable :: parse_error, satisfy_error
 
+    is_satisfied = .false.
     str = trim(adjustl(string))
 
     if (len(str) == 0) then
@@ -1193,12 +1212,13 @@ contains
   end
 
   !> Create sets of comparators that are separated by `||`. An example of a
-  !> version range is `4.2.3 || 5.0.0 - 7.2.3`.
+  !> version range is `4.2.3 || 5.0.0 - 7.2.3`. If parsing fails, `this` is
+  !> left unchanged.
   subroutine parse_version_range(this, string, error)
 
     !> Sets of comparators to be determined. They are separated by `||` if there
     !> are multiple sets.
-    class(version_range_t), intent(out) :: this
+    class(version_range_t), intent(inout) :: this
 
     !> Input string to be evaluated.
     character(*), intent(in) :: string
@@ -1208,6 +1228,7 @@ contains
 
     integer :: i, l, n_sets, idx, start
     type(comparator_set_t) :: comp_set
+    type(version_range_t) :: candidate
 
     ! Pre-count sets separated by ||.
     n_sets = 1
@@ -1222,7 +1243,7 @@ contains
       end if
     end do
 
-    allocate (this%comp_sets(n_sets))
+    allocate (candidate%comp_sets(n_sets))
 
     ! Parse each set directly from the original input.
     idx = 0
@@ -1233,7 +1254,7 @@ contains
         idx = idx + 1
         call comp_set%parse_comp_set(string(start:i - 1), error)
         if (allocated(error)) return
-        this%comp_sets(idx) = comp_set
+        candidate%comp_sets(idx) = comp_set
         start = i + 2
         i = i + 2
       else
@@ -1248,7 +1269,8 @@ contains
       call comp_set%parse_comp_set('', error)
     end if
     if (allocated(error)) return
-    this%comp_sets(idx) = comp_set
+    candidate%comp_sets(idx) = comp_set
+    call move_alloc(candidate%comp_sets, this%comp_sets)
   end
 
   !> Parse a set of comparators that are separated by ` ` from a string. An
@@ -1390,6 +1412,7 @@ contains
     logical :: comparator_satisfied
     type(error_t), allocatable :: comparator_error
 
+    is_satisfied = .false.
     if (size(comp_set%comps) == 0) then
       error = error_t('Comparator set cannot be empty.'); return
     end if
