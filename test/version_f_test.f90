@@ -1616,11 +1616,195 @@ program test
     end if
   end do
 
+!######################## SemVer 2.0.0 conformance ###########################!
+
+  call check_semver_valid([character(64) :: &
+                           '0.0.0', &
+                           '1.0.0', &
+                           '1.2.3', &
+                           '1.0.0-alpha', &
+                           '1.0.0-alpha.1', &
+                           '1.0.0-0.3.7', &
+                           '1.0.0-x.7.z.92', &
+                           '1.0.0-x-y-z.--', &
+                           '1.0.0-alpha+001', &
+                           '1.0.0+20130313144700', &
+                           '1.0.0-beta+exp.sha.5114f85', &
+                           '1.0.0+21AF26D3----117B344092BD'])
+
+  call check_semver_invalid([character(64) :: &
+                             '', &
+                             '1', &
+                             '1.2', &
+                             'v1.2.3', &
+                             '=1.2.3', &
+                             '01.2.3', &
+                             '1.02.3', &
+                             '1.2.03', &
+                             '-1.2.3', &
+                             '1.-2.3', &
+                             '1.2.-3', &
+                             '1.2.3-', &
+                             '1.2.3+', &
+                             '1.2.3-alpha.', &
+                             '1.2.3-alpha..1', &
+                             '1.2.3-alpha_1', &
+                             '1.2.3-01', &
+                             '1.2.3+build.', &
+                             '1.2.3+build..1', &
+                             '1.2.3+build_1', &
+                             '1.2.3-alpha+build+extra'])
+
+  call check_semver_order([character(32) :: &
+                           '1.0.0-alpha', &
+                           '1.0.0-alpha.1', &
+                           '1.0.0-alpha.beta', &
+                           '1.0.0-beta', &
+                           '1.0.0-beta.2', &
+                           '1.0.0-beta.11', &
+                           '1.0.0-rc.1', &
+                           '1.0.0'])
+
+  call check_semver_order([character(32) :: &
+                           '1.0.0-1', &
+                           '1.0.0-A', &
+                           '1.0.0-Z', &
+                           '1.0.0-a', &
+                           '1.0.0-z'])
+
+  call check_ascii_prerelease_order()
+  call check_semver_construction()
+
 !#################################final_message################################!
 
   print *, achar(10)//achar(27)//'[92m All tests passed.'//achar(27)
 
 contains
+
+  subroutine check_semver_valid(fixtures)
+    character(*), intent(in) :: fixtures(:)
+
+    type(version_t) :: constructed, parsed
+    type(error_t), allocatable :: parse_error
+    integer :: fixture_index
+
+    do fixture_index = 1, size(fixtures)
+      call parsed%parse(trim(fixtures(fixture_index)), parse_error, strict_mode=.true.)
+      if (allocated(parse_error)) then
+        call fail('Official SemVer fixture was rejected: '//trim(fixtures(fixture_index)))
+      end if
+      if (.not. is_version(trim(fixtures(fixture_index)), strict_mode=.true.)) then
+        call fail('is_version rejected official SemVer: '//trim(fixtures(fixture_index)))
+      end if
+      if (parsed%to_string() /= trim(fixtures(fixture_index))) then
+        call fail('SemVer fixture did not round-trip: '//trim(fixtures(fixture_index)))
+      end if
+
+      if (parsed%prerelease() /= '' .and. parsed%build() /= '') then
+        call constructed%create(parsed%major(), parsed%minor(), parsed%patch(), &
+                                parsed%prerelease(), parsed%build(), parse_error, strict_mode=.true.)
+      else if (parsed%prerelease() /= '') then
+        call constructed%create(parsed%major(), parsed%minor(), parsed%patch(), &
+                                prerelease=parsed%prerelease(), error=parse_error, strict_mode=.true.)
+      else if (parsed%build() /= '') then
+        call constructed%create(parsed%major(), parsed%minor(), parsed%patch(), &
+                                build=parsed%build(), error=parse_error, strict_mode=.true.)
+      else
+        call constructed%create(parsed%major(), parsed%minor(), parsed%patch(), &
+                                error=parse_error, strict_mode=.true.)
+      end if
+      if (allocated(parse_error)) call fail('Official SemVer fixture could not be constructed')
+      if (.not. constructed%is_exactly(parsed)) call fail('Constructed SemVer fixture changed identity')
+    end do
+  end
+
+  subroutine check_semver_invalid(fixtures)
+    character(*), intent(in) :: fixtures(:)
+
+    type(version_t) :: parsed
+    type(error_t), allocatable :: parse_error
+    integer :: fixture_index
+
+    do fixture_index = 1, size(fixtures)
+      call parsed%parse(trim(fixtures(fixture_index)), parse_error, strict_mode=.true.)
+      if (.not. allocated(parse_error)) then
+        call fail('Invalid SemVer fixture was accepted: '//trim(fixtures(fixture_index)))
+      end if
+      if (is_version(trim(fixtures(fixture_index)), strict_mode=.true.)) then
+        call fail('is_version accepted invalid SemVer: '//trim(fixtures(fixture_index)))
+      end if
+    end do
+  end
+
+  subroutine check_semver_order(fixtures)
+    character(*), intent(in) :: fixtures(:)
+
+    type(version_t) :: lower, higher
+    integer :: fixture_index
+
+    do fixture_index = 1, size(fixtures) - 1
+      lower = version_t(trim(fixtures(fixture_index)), strict_mode=.true.)
+      higher = version_t(trim(fixtures(fixture_index + 1)), strict_mode=.true.)
+      if (.not. lower < higher) call fail('SemVer less-than precedence failed')
+      if (.not. lower <= higher) call fail('SemVer less-or-equal precedence failed')
+      if (.not. higher > lower) call fail('SemVer greater-than precedence failed')
+      if (.not. higher >= lower) call fail('SemVer greater-or-equal precedence failed')
+      if (lower == higher) call fail('Distinct SemVer precedence fixtures compared equal')
+      if (.not. lower /= higher) call fail('SemVer inequality disagreed with precedence')
+    end do
+  end
+
+  subroutine check_ascii_prerelease_order()
+    character(*), parameter :: lower_cases(*) = [character(16) :: &
+                                                 '1.0.0--', &
+                                                 '1.0.0-A', &
+                                                 '1.0.0-Z', &
+                                                 '1.0.0-a', &
+                                                 '1.0.0-A0', &
+                                                 '1.0.0-A9', &
+                                                 '1.0.0-2']
+    character(*), parameter :: higher_cases(*) = [character(16) :: &
+                                                  '1.0.0-A', &
+                                                  '1.0.0-Z', &
+                                                  '1.0.0-a', &
+                                                  '1.0.0-z', &
+                                                  '1.0.0-A9', &
+                                                  '1.0.0-AA', &
+                                                  '1.0.0-9']
+
+    type(version_t) :: lower, higher
+    integer :: fixture_index
+
+    do fixture_index = 1, size(lower_cases)
+      lower = version_t(trim(lower_cases(fixture_index)), strict_mode=.true.)
+      higher = version_t(trim(higher_cases(fixture_index)), strict_mode=.true.)
+      if (.not. lower < higher) then
+        call fail('ASCII prerelease order failed: '//trim(lower_cases(fixture_index))// &
+                  ' < '//trim(higher_cases(fixture_index)))
+      end if
+      if (.not. higher > lower) call fail('Reverse ASCII prerelease comparison failed')
+    end do
+  end
+
+  subroutine check_semver_construction()
+    type(version_t) :: constructed, parsed
+    type(error_t), allocatable :: parse_error
+
+    call constructed%create(1, 2, 3, 'alpha.1', 'build.001', parse_error, strict_mode=.true.)
+    if (allocated(parse_error)) call fail('Valid strict construction failed')
+    if (constructed%to_string() /= '1.2.3-alpha.1+build.001') then
+      call fail('Strict construction did not produce canonical SemVer')
+    end if
+    call parsed%parse(constructed%to_string(), parse_error, strict_mode=.true.)
+    if (allocated(parse_error)) call fail('Constructed SemVer could not be parsed')
+    if (.not. constructed%is_exactly(parsed)) call fail('Constructed SemVer did not round-trip exactly')
+
+    parsed = version_t('1.2.3+build.1', strict_mode=.true.)
+    constructed = version_t('1.2.3+build.2', strict_mode=.true.)
+    if (parsed /= constructed) call fail('Build metadata affected SemVer precedence equality')
+    if (parsed < constructed .or. parsed > constructed) call fail('Build metadata affected SemVer ordering')
+    if (parsed%is_exactly(constructed)) call fail('Exact identity ignored different build metadata')
+  end
 
   integer function random_int(limit)
     integer, intent(in) :: limit
