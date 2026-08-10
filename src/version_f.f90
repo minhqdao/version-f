@@ -243,8 +243,8 @@ contains
     this%major_ = candidate%major_
     this%minor_ = candidate%minor_
     this%patch_ = candidate%patch_
-    call move_alloc(candidate%prerelease_, this%prerelease_)
-    call move_alloc(candidate%build_, this%build_)
+    call replace_identifiers(this%prerelease_, candidate%prerelease_)
+    call replace_identifiers(this%build_, candidate%build_)
   end
 
   !> Returns a string representation of the version including prerelease and
@@ -614,9 +614,26 @@ contains
       this%major_ = candidate%major_
       this%minor_ = candidate%minor_
       this%patch_ = candidate%patch_
-      call move_alloc(candidate%prerelease_, this%prerelease_)
-      call move_alloc(candidate%build_, this%build_)
+      call replace_identifiers(this%prerelease_, candidate%prerelease_)
+      call replace_identifiers(this%build_, candidate%build_)
     end if
+  end
+
+  !> Replace an identifier array without relying on reallocating assignment or
+  !> `move_alloc` support for arrays of derived types.
+  subroutine replace_identifiers(destination, source)
+    type(string_t), allocatable, intent(inout) :: destination(:)
+    type(string_t), allocatable, intent(in) :: source(:)
+
+    integer :: i
+
+    if (allocated(destination)) deallocate (destination)
+    if (.not. allocated(source)) return
+
+    allocate (destination(size(source)))
+    do i = 1, size(source)
+      destination(i)%str = source(i)%str
+    end do
   end
 
   !> Build the `major.minor.patch` part of the version. In strict mode, all
