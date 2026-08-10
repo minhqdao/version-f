@@ -254,6 +254,13 @@ print *, range%satisfies(version_t(1, 5, 0)) ! true
 
 In `strict_mode` (optional parameter in `create`, `parse` and `is_version`), all `major`, `minor` and `patch` numbers must be provided. Implicit zeros and leading zeroes are forbidden. Without strict mode, missing numbers become zero. Input is trimmed in both modes.
 
+Strict mode enforces the SemVer 2.0.0 version grammar after trimming surrounding
+whitespace. That trimming is an intentional compatibility extension: surrounding
+whitespace is not part of a valid SemVer string. Prerelease identifiers are
+ordered using ASCII codes as required by SemVer, independently of the processor's
+native character collating sequence. Range expressions are a `version-f` feature
+and are not defined by the SemVer 2.0.0 specification.
+
 ```fortran
 type(version_t) :: version
 type(error_t), allocatable :: error

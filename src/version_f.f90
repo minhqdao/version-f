@@ -990,7 +990,7 @@ contains
         if (len(lhs(i)%str) /= len(rhs(i)%str)) then
           is_greater = len(lhs(i)%str) > len(rhs(i)%str); return
         end if
-        is_greater = lhs(i)%str > rhs(i)%str; return
+        is_greater = is_ascii_greater(lhs(i)%str, rhs(i)%str); return
       else if (lhs(i)%is_numeric()) then
         is_greater = .false.; return
       else if (rhs(i)%is_numeric()) then
@@ -999,7 +999,7 @@ contains
 
       do j = 1, min(len(lhs(i)%str), len(rhs(i)%str))
         if (lhs(i)%str(j:j) == rhs(i)%str(j:j)) cycle
-        is_greater = lhs(i)%str(j:j) > rhs(i)%str(j:j); return
+        is_greater = iachar(lhs(i)%str(j:j)) > iachar(rhs(i)%str(j:j)); return
       end do
 
       if (len(lhs(i)%str) /= len(rhs(i)%str)) then
@@ -1008,6 +1008,22 @@ contains
     end do
 
     is_greater = size(lhs) > size(rhs)
+  end
+
+  !> Compare equal-length digit strings using the ASCII order required by
+  !> Semantic Versioning, independently of the processor collating sequence.
+  pure logical function is_ascii_greater(lhs, rhs)
+    character(*), intent(in) :: lhs
+    character(*), intent(in) :: rhs
+
+    integer :: i
+
+    is_ascii_greater = .false.
+    do i = 1, min(len(lhs), len(rhs))
+      if (lhs(i:i) == rhs(i:i)) cycle
+      is_ascii_greater = iachar(lhs(i:i)) > iachar(rhs(i:i))
+      return
+    end do
   end
 
   !> True if both versions are exactly the same including the build metadata.
