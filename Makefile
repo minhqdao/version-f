@@ -1,6 +1,6 @@
 .POSIX:
 .SUFFIXES:
-.PHONY: all static shared test clean
+.PHONY: all static shared examples test clean
 
 FC ?= gfortran
 FFLAGS := -O2
@@ -27,30 +27,57 @@ endif
 IS_GFORT  := $(findstring gfortran,$(FC))
 IS_LFORTR := $(findstring lfortran,$(FC))
 IS_FLANG  := $(findstring flang,$(FC))
+IS_AOCC   := $(findstring aocc,$(FORTRAN_COMPILER))$(if $(IS_FLANG),$(findstring AOCC,$(shell $(FC) --version 2>&1)))
 
-ifneq (,$(IS_GFORT)$(IS_LFORTR))
-	MODIN  := -I$(MODDIR)
-	MODOUT := -J$(MODDIR)
-else ifneq (,$(IS_FLANG))
-	MODIN  := -I$(MODDIR)
-	MODOUT := -module-dir $(MODDIR)
-else
-	MODIN  := -I$(MODDIR)
-	MODOUT := -module $(MODDIR)
+MSVC_ABI :=
+ifeq ($(PLATFORM),Windows)
+ifeq (,$(IS_GFORT)$(IS_LFORTR))
+	MSVC_ABI := yes
+endif
 endif
 
-BUILD_TARGETS := static
-TEST_TARGETS  := 
-
+SHARED_SUPPORTED := yes
 ifneq (,$(IS_LFORTR))
-	TEST_TARGETS += $(EXESSTATIC)
+	SHARED_SUPPORTED :=
+endif
+ifeq ($(PLATFORM),Windows)
+ifeq (,$(IS_GFORT))
+	SHARED_SUPPORTED :=
+endif
+endif
+
+PICFLAGS :=
+ifneq (,$(SHARED_SUPPORTED))
+ifneq ($(PLATFORM),Windows)
+	PICFLAGS := -fpic
+endif
+endif
+
+ifneq (,$(IS_GFORT)$(IS_LFORTR))
+	MODIN  = -I$(MODDIR)
+	MODOUT = -J$(MODDIR)
+else ifneq (,$(IS_AOCC))
+	MODIN  = -I$(MODDIR)
+	MODOUT = -module $(MODDIR)
+else ifneq (,$(IS_FLANG))
+	MODIN  = -I$(MODDIR)
+	MODOUT = -module-dir $(MODDIR)
 else
-	BUILD_TARGETS += shared
-	TEST_TARGETS  += $(EXESSTATIC) $(EXESSHARED)
+	MODIN  = -I$(MODDIR)
+	MODOUT = -module $(MODDIR)
 endif
 
 NAME := version-f
 STATIC := lib$(NAME).a
+ARCHIVE = $(AR) $(ARFLAGS) $@ $^
+ifneq (,$(MSVC_ABI))
+	STATIC := lib$(NAME).lib
+	ifneq (,$(IS_FLANG))
+		ARCHIVE = llvm-ar rcs $@ $^
+	else
+		ARCHIVE = lib.exe /nologo /out:$@ $^
+	endif
+endif
 
 SRCDIR := src
 TESTDIR := test
@@ -63,25 +90,39 @@ EXEDIR := $(BUILDDIR)/exe
 SRCS := $(wildcard $(SRCDIR)/*.f90)
 OBJS := $(patsubst $(SRCDIR)/%.f90,$(OBJDIR)/%.o,$(SRCS))
 
-EXESRCS := $(foreach dir,$(TESTDIR) $(EXMPLDIR),$(wildcard $(dir)/*.f90))
+TESTSRCS := $(wildcard $(TESTDIR)/*.f90)
+EXMPLSRCS := $(wildcard $(EXMPLDIR)/*.f90)
 
-EXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXESRCS)))
-EXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXESRCS)))
+TESTEXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(TESTSRCS)))
+TESTEXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(TESTSRCS)))
+EXMPLEXESSTATIC := $(patsubst %.f90,$(EXEDIR)/%_static.out,$(notdir $(EXMPLSRCS)))
+EXMPLEXESSHARED := $(patsubst %.f90,$(EXEDIR)/%_shared.out,$(notdir $(EXMPLSRCS)))
+
+BUILD_TARGETS := static
+TEST_TARGETS := $(TESTEXESSTATIC)
+EXAMPLE_TARGETS := $(EXMPLEXESSTATIC)
+
+ifneq (,$(SHARED_SUPPORTED))
+	BUILD_TARGETS += shared
+	TEST_TARGETS += $(TESTEXESSHARED)
+	EXAMPLE_TARGETS += $(EXMPLEXESSHARED)
+endif
 
 all: $(BUILD_TARGETS)
 static: $(STATIC)
 shared: $(SHARED)
+examples: $(EXAMPLE_TARGETS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 	@mkdir -p $(MODDIR) $(OBJDIR)
-	$(FC) $(FFLAGS) $(MODOUT) -c $< -o $@
+	$(FC) $(FFLAGS) $(PICFLAGS) $(MODOUT) -c $< -o $@
 
 $(STATIC): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $^
+	$(ARCHIVE)
 
 $(SHARED): $(OBJS)
 	@mkdir -p $(MODDIR)
-	$(FC) $(FFLAGS) -fpic -shared $(MODOUT) -o $@ $^ $(LDFLAGS)
+	$(FC) $(FFLAGS) -shared $(MODOUT) -o $@ $^ $(LDFLAGS)
 
 $(EXEDIR):
 	@mkdir -p $(EXEDIR)
@@ -99,11 +140,17 @@ $(EXEDIR)/%_shared.out: $(EXMPLDIR)/%.f90 $(SHARED) | $(EXEDIR)
 	$(FC) $(FFLAGS) $(MODIN) -o $@ $^ $(LDFLAGS)
 
 test: $(TEST_TARGETS)
-	@for f in $(TEST_TARGETS); do \
+	@test_count=0; \
+	for f in $(TEST_TARGETS); do \
 		echo "Running $$f..."; \
 		./$$f || exit 1; \
-	done
-	@echo "All tests passed!"
+		test_count=$$((test_count + 1)); \
+	done; \
+	if [ "$$test_count" -eq 0 ]; then \
+		echo "Error: no tests were run."; \
+		exit 1; \
+	fi; \
+	echo "All $$test_count tests passed!"
 
 clean:
 	rm -rf $(BUILDDIR)

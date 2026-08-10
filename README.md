@@ -10,6 +10,8 @@ This package implements the version syntax and precedence rules from
 [Semantic Versioning 2.0.0](https://semver.org). It aims to be a user-friendly
 tool for handling versions in your Fortran projects.
 
+version-f requires a Fortran 2008 compiler.
+
 It follows the `major`.`minor`.`patch` pattern and allows the inclusion of
 `prerelease` labels and `build` metadata. Versions can be created or parsed from
 strings, compared, incremented and printed as strings.
@@ -80,7 +82,9 @@ make
 
 This will generate the static library `libversion-f.a` in the root directory. You can compile it alongside your project or link it using the `-L` and `-l` flags.
 
-A dynamic library will also be created for use in your projects (suffix `.so` on Linux systems and `.dylib` on macOS).
+A dynamic library will also be created for use in your projects (suffix `.so`
+on Linux systems and `.dylib` on macOS). On Windows, the Makefile builds a DLL
+with gfortran; other supported Windows compilers build the static library only.
 
 If you wish to use a compiler other than `gfortran`, simply specify it by running:
 

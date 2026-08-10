@@ -54,9 +54,9 @@ jobs:
           - compiler: gfortran
             make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
           - compiler: ifx
-            make_flags: 'FFLAGS="-O2 -warn all"'
+            make_flags: 'FFLAGS="-O2 -warn:all"'
           - compiler: ifort
-            make_flags: 'FFLAGS="-O2 -warn all"'
+            make_flags: 'FFLAGS="-O2 -warn:all"'
           - compiler: lfortran
             make_flags: ""
           - compiler: flang
@@ -67,14 +67,19 @@ jobs:
           - os: macos-latest
             toolchain: { compiler: ifort }
         include:
+          - os: ubuntu-24.04-arm
+            toolchain:
+              compiler: gfortran
+              make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
+          - os: ubuntu-22.04
+            toolchain:
+              compiler: gfortran
+              version: "11"
+              make_flags: "FFLAGS='-O2 -Wall -Wextra -fcheck=all -fbacktrace'"
           - os: ubuntu-latest
             toolchain:
               compiler: nvfortran
               make_flags: 'FFLAGS="-O2 -Minform=inform"'
-          - os: ubuntu-latest
-            toolchain:
-              compiler: aocc
-              make_flags: ""
           - os: ubuntu-24.04-arm
             toolchain:
               compiler: nvfortran
@@ -82,7 +87,7 @@ jobs:
           - os: macos-26-intel
             toolchain:
               compiler: ifort
-              make_flags: 'FFLAGS="-O2 -warn all"'
+              make_flags: 'FFLAGS="-O2 -warn:all"'
           - os: windows-latest
             toolchain:
               msystem: ucrt64
@@ -101,39 +106,49 @@ jobs:
           version: ${{ matrix.toolchain.version }}
       - run: echo "${{ steps.setup.outputs.version }}"
       - run: make test ${{ matrix.toolchain.make_flags }}
+        shell: bash
 
   cmake-test:
-    name: CMake / ${{ matrix.os }} / ${{ matrix.linkage }}
+    name: CMake / ${{ matrix.os }} / ${{ matrix.toolchain.compiler }} / ${{ matrix.linkage }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             linkage: static
+            toolchain: { compiler: gfortran }
           - os: ubuntu-latest
             linkage: shared
+            toolchain: { compiler: gfortran }
           - os: macos-latest
             linkage: static
+            toolchain: { compiler: gfortran }
           - os: windows-latest
             linkage: static
+            toolchain: { compiler: gfortran }
+          - os: windows-latest
+            linkage: static
+            toolchain:
+              compiler: ifx
+              cmake_flags: -G Ninja
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
       - uses: minhqdao/setup-fortran@v1
         with:
-          compiler: gfortran
+          compiler: ${{ matrix.toolchain.compiler }}
       - name: Configure
-        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
+        run: cmake -S . -B build/cmake ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.linkage == 'shared' }}
       - run: cmake --build build/cmake --config Release --parallel
       - run: ctest --test-dir build/cmake -C Release --output-on-failure
       - name: Install
         run: cmake --install build/cmake --config Release --prefix "${{ runner.temp }}/version-f-install"
       - name: Configure installed-package consumer
-        run: cmake -S cmake/test/find-package -B build/find-package -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ runner.temp }}/version-f-install"
+        run: cmake -S cmake/test/find-package -B build/find-package ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ runner.temp }}/version-f-install"
       - run: cmake --build build/find-package --config Release --parallel
       - run: ctest --test-dir build/find-package -C Release --output-on-failure
       - name: Configure FetchContent consumer
-        run: cmake -S cmake/test/fetch-content -B build/fetch-content -DCMAKE_BUILD_TYPE=Release -DVERSION_F_SOURCE_DIR="${{ github.workspace }}"
+        run: cmake -S cmake/test/fetch-content -B build/fetch-content ${{ matrix.toolchain.cmake_flags }} -DCMAKE_BUILD_TYPE=Release -DVERSION_F_SOURCE_DIR="${{ github.workspace }}"
       - run: cmake --build build/fetch-content --config Release --parallel
       - run: ctest --test-dir build/fetch-content -C Release --output-on-failure
 
@@ -171,6 +186,21 @@ jobs:
         run: |
           pip install fortitude-lint
           fortitude check .
+
+  standard-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: minhqdao/setup-fortran@v1
+        with:
+          compiler: gfortran
+      - name: Check Fortran 2008 conformance
+        run: |
+          mkdir -p build/standard
+          gfortran -std=f2008 -pedantic-errors -fsyntax-only \
+            -J build/standard src/version_f.f90
+          gfortran -std=f2008 -pedantic-errors -fsyntax-only \
+            -I build/standard test/*.f90 example/*.f90 cmake/test/consumer.f90
 
   coverage:
     runs-on: ubuntu-latest
