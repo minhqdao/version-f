@@ -78,6 +78,23 @@ program test
   call v1%create(1, 5, 3, 'abc', '', e)
   if (.not. allocated(e)) call fail('An empty string should fail.')
 
+  v1 = version_t(7, 8, 9, 'rc.1', 'build.5')
+  call v1%create(-1, error=e)
+  if (.not. allocated(e)) call fail('Failed create should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Failed create changed the previous version')
+  call v1%create(1, -1, error=e)
+  if (.not. allocated(e)) call fail('Failed minor creation should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Failed minor creation changed the version')
+  call v1%create(1, 2, -1, error=e)
+  if (.not. allocated(e)) call fail('Failed patch creation should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Failed patch creation changed the version')
+  call v1%create(1, 2, 3, 'valid.then..invalid', error=e)
+  if (.not. allocated(e)) call fail('Failed prerelease creation should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Failed prerelease creation changed the version')
+  call v1%create(1, 2, 3, 'valid', 'invalid/', error=e)
+  if (.not. allocated(e)) call fail('Failed build creation should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Failed build creation changed the version')
+
   call v1%create(1, 5, 3, 'abc', 'abc&def', e)
   if (.not. allocated(e)) call fail('Invalid character.')
 
@@ -993,15 +1010,34 @@ program test
   if (.not. is_version('1.0.0+123', strict_mode=.false.)) call fail('No strict mode: Is valid version.')
   if (.not. is_version('11.0', strict_mode=.false.)) call fail('No strict mode: Is valid version.')
 
+  v1 = version_t(7, 8, 9, 'rc.1', 'build.5')
+  call v1%parse('', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Empty strict parse should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Early parse failure changed the version')
+  call v1%parse('1.2.3-valid.then..invalid', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Invalid prerelease parse should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Prerelease parse failure changed the version')
+  call v1%parse('1.2.3-valid+invalid/', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Invalid build parse should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Late parse failure changed the version')
+  huge_str = repeat('9', len(huge_str))
+  call v1%parse(trim(huge_str)//'.2.3', e, strict_mode=.true.)
+  if (.not. allocated(e)) call fail('Overflowing parse should report an error')
+  if (v1%to_string() /= '7.8.9-rc.1+build.5') call fail('Overflowing parse changed the version')
+
 !##################################try_satisfy#################################!
 
   v1 = version_t(0, 1, 0)
 
+  is_satisfied = .true.
   call v1%try_satisfy('', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-1 should fail.')
+  if (is_satisfied) call fail('satisfy-1 should return false on error.')
 
+  is_satisfied = .true.
   call v1%try_satisfy(' ', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-2 should fail.')
+  if (is_satisfied) call fail('satisfy-2 should return false on error.')
 
   call v1%try_satisfy('0.1.0', is_satisfied, e)
   if (.not. is_satisfied) call fail('satisfy-3 should satisfy.')
@@ -1075,6 +1111,7 @@ program test
 
   call v1%try_satisfy('0.1.0abcd', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-19 should fail.')
+  if (is_satisfied) call fail('satisfy-19 should return false on error.')
 
   call v1%try_satisfy('=0.1.0abcd', is_satisfied, e)
   if (.not. allocated(e)) call fail('satisfy-20 should fail.')
@@ -1254,11 +1291,25 @@ program test
 
   call range%parse('', e)
   if (.not. allocated(e)) call fail('Empty parsed range should report an error')
+  if (.not. range%satisfies(version_t(1, 5, 0))) then
+    call fail('Failed range parse should preserve the previous range')
+  end if
+
+  call range%parse('>=4.0.0 || invalid', e)
+  if (.not. allocated(e)) call fail('Partially valid range should report an error')
+  if (.not. range%satisfies(version_t(1, 5, 0))) then
+    call fail('Partially parsed range should preserve the previous range')
+  end if
+  if (range%satisfies(version_t(4, 0, 0))) then
+    call fail('Failed range parse replaced the previous range')
+  end if
 
   block
     type(version_range_t) :: unparsed_range
+    is_satisfied = .true.
     call unparsed_range%try_satisfy(version_t(1), is_satisfied, e)
     if (.not. allocated(e)) call fail('Unparsed range should report an error')
+    if (is_satisfied) call fail('Unparsed range should return false on error')
     if (unparsed_range%satisfies(version_t(1))) call fail('Unparsed range should not satisfy a version')
   end block
 
@@ -1436,8 +1487,8 @@ program test
   call v1%parse('1.'//achar(9)//'0.0', e)
   if (.not. allocated(e)) call fail('Tab inside a version should not be accepted')
 
-  call v1%parse('1.0.0-alpha'//achar(128), e)
-  if (.not. allocated(e)) call fail('Non-ASCII identifier byte should not be accepted')
+  call v1%parse('1.0.0-alpha'//achar(127), e)
+  if (.not. allocated(e)) call fail('ASCII control character should not be accepted')
 
   long_input = '1.0.0-'//repeat('a', 10000)
   call v1%parse(long_input, e, strict_mode=.true.)

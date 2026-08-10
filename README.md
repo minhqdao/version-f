@@ -119,6 +119,12 @@ call version%create(0, 1, 0, 'alpha', '1', error)
 call version%parse('0.1.0-alpha+1', error)
 ```
 
+The recoverable `create` and `parse` procedures leave an existing object
+unchanged when they return an error. Likewise, `try_satisfy` always sets its
+logical result to `.false.` when evaluation fails. This makes it safe to inspect
+outputs and continue using a previously valid version or range after handling
+an error.
+
 ## Prerelease labels
 
 `prerelease` labels can be included and will be appended after the `patch` via a `-` sign. The identifiers must comprise only ASCII alphanumerics and hyphens `[0-9A-Za-z-]` and are separated by dots. Numerical identifiers must not start with a `0` digit. A version containing `prerelease` data has lower precedence than the equivalent version without. `prerelease` information is cleared each time the version is incremented. A `prerelease` can be [incremented](#increment-versions).
